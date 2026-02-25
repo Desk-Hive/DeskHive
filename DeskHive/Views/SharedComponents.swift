@@ -1,0 +1,177 @@
+//
+//  SharedComponents.swift
+//  DeskHive
+//  Shared UI components used across views.
+//
+
+import SwiftUI
+
+// MARK: - Custom Text Field
+struct DeskHiveTextField: View {
+    let placeholder: String
+    @Binding var text: String
+    var isSecure: Bool = false
+    var icon: String? = nil
+
+    var body: some View {
+        HStack(spacing: 12) {
+            if let icon = icon {
+                Image(systemName: icon)
+                    .foregroundColor(.white.opacity(0.6))
+                    .frame(width: 20)
+            }
+
+            if isSecure {
+                SecureField(placeholder, text: $text)
+                    .foregroundColor(.white)
+                    .tint(.white)
+                    .autocorrectionDisabled()
+            } else {
+                TextField(placeholder, text: $text)
+                    .foregroundColor(.white)
+                    .tint(.white)
+                    .autocorrectionDisabled()
+                    .autocapitalization(.none)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
+        .background(Color.white.opacity(0.1))
+        .cornerRadius(14)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Primary Button
+struct PrimaryButton: View {
+    let title: String
+    let isLoading: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                LinearGradient(
+                    gradient: Gradient(colors: [Color(hex: "#E94560"), Color(hex: "#C73652")]),
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .cornerRadius(14)
+                .shadow(color: Color(hex: "#E94560").opacity(0.5), radius: 10, x: 0, y: 5)
+
+                if isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(1.1)
+                } else {
+                    Text(title)
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+        }
+        .disabled(isLoading)
+        .opacity(isLoading ? 0.8 : 1.0)
+    }
+}
+
+// MARK: - Secondary Button
+struct SecondaryButton: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .foregroundColor(Color(hex: "#E94560"))
+                .padding(.vertical, 10)
+        }
+    }
+}
+
+// MARK: - Error Banner
+struct ErrorBanner: View {
+    let message: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.orange)
+            Text(message)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.leading)
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(Color.red.opacity(0.2))
+        .cornerRadius(12)
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.red.opacity(0.4), lineWidth: 1))
+    }
+}
+
+// MARK: - Success Banner
+struct SuccessBanner: View {
+    let message: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(.green)
+            Text(message)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.leading)
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(Color.green.opacity(0.2))
+        .cornerRadius(12)
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.green.opacity(0.4), lineWidth: 1))
+    }
+}
+
+// MARK: - App Background
+struct AppBackground: View {
+    var body: some View {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                Color(hex: "#1A1A2E"),
+                Color(hex: "#16213E"),
+                Color(hex: "#0F3460")
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
+    }
+}
+
+// MARK: - Card
+struct DeskHiveCard<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .padding(20)
+            .background(Color.white.opacity(0.08))
+            .cornerRadius(18)
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(Color.white.opacity(0.15), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+    }
+}
