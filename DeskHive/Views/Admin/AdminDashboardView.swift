@@ -10,9 +10,11 @@ struct AdminDashboardView: View {
     @StateObject private var adminVM = AdminViewModel()
     @StateObject private var authVM = AuthViewModel()
     @StateObject private var communityVM = CommunityViewModel()
+    @StateObject private var eomVM = EmployeeOfMonthViewModel()
 
     @State private var selectedTab: AdminTab = .home
     @State private var showNews: Bool = false
+    @State private var showEOM: Bool = false
 
     enum AdminTab {
         case home, employees, communities, announcements, issues
@@ -90,6 +92,19 @@ struct AdminDashboardView: View {
         .sheet(isPresented: $showNews) {
             TechNewsView()
         }
+        .sheet(isPresented: $showEOM) {
+            AdminEmployeeOfMonthView(
+                vm: eomVM,
+                members: adminVM.members,
+                adminEmail: appState.currentUser?.email ?? ""
+            )
+        }
+        .task {
+            await adminVM.fetchMembers()
+            await communityVM.fetchCommunities()
+            eomVM.startListening()
+        }
+        .onDisappear { eomVM.stopListening() }
     }
 
     // MARK: - Home Tab
@@ -155,6 +170,41 @@ struct AdminDashboardView: View {
                     selectedTab = .issues
                     Task { await adminVM.fetchIssues() }
                 }
+
+                ActionCard(
+                    title: "Employee of the Month",
+                    subtitle: "Spotlight a star employee this month",
+                    icon: "trophy.fill",
+                    color: Color(hex: "#F5A623")
+                ) {
+                    showEOM = true
+                }
+            }
+            .padding(.horizontal, 24)
+
+            // ── Employee of the Month card ────────────────────────────────
+            VStack(spacing: 12) {
+                HStack {
+                    Text("Employee of the Month")
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    Spacer()
+                    Button(action: { showEOM = true }) {
+                        HStack(spacing: 4) {
+                            Text(eomVM.current == nil ? "Select" : "Change")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(Color(hex: "#F5A623"))
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(Color(hex: "#F5A623"))
+                        }
+                    }
+                }
+                if let award = eomVM.current {
+                    EmployeeOfMonthCard(award: award)
+                } else {
+                    EmployeeOfMonthEmptyCard()
+                }
             }
             .padding(.horizontal, 24)
 
@@ -165,12 +215,6 @@ struct AdminDashboardView: View {
             .padding(.horizontal, 24)
 
             Spacer().frame(height: 40)
-        }
-        .task {
-            await adminVM.fetchMembers()
-            await communityVM.fetchCommunities()
-            await communityVM.fetchCommunities()
-            await communityVM.fetchCommunities()
         }
     }
 

@@ -9,6 +9,7 @@ struct EmployeeDashboardView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var authVM    = AuthViewModel()
     @StateObject private var checkInVM = CheckInViewModel()
+    @StateObject private var eomVM     = EmployeeOfMonthViewModel()
 
     @State private var selectedTab: EmployeeTab = .home
     @State private var showCheckIn    = false
@@ -100,7 +101,9 @@ struct EmployeeDashboardView: View {
                 await checkInVM.loadTodayStatus(uid: uid)
                 await checkInVM.loadRecentCheckIns(uid: uid)
             }
+            eomVM.startListening()
         }
+        .onDisappear { eomVM.stopListening() }
     }
 
     // ====================================================================
@@ -209,6 +212,16 @@ struct EmployeeDashboardView: View {
                          value: streakCount(),
                          icon: "flame.fill",
                          color: Color(hex: "#F5A623"))
+            }
+
+            // ── Employee of the Month ────────────────────────────────────
+            if let award = eomVM.current {
+                EmployeeOfMonthCard(
+                    award: award,
+                    isHighlighted: award.employeeID == appState.currentUser?.id
+                )
+            } else {
+                EmployeeOfMonthEmptyCard()
             }
 
             // ── Quick actions ────────────────────────────────────────────

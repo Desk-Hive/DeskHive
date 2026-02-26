@@ -11,6 +11,7 @@ struct ProjectLeadDashboardView: View {
     @StateObject private var authVM   = AuthViewModel()
     @StateObject private var issueVM  = IssueReportViewModel()
     @StateObject private var annVM    = AnnouncementViewModel()
+    @StateObject private var eomVM    = EmployeeOfMonthViewModel()
 
     @State private var selectedTab: PLTab = .home
     @State private var myCommunity: Microcommunity? = nil
@@ -105,8 +106,12 @@ struct ProjectLeadDashboardView: View {
                 await annVM.fetchPersonal(for: uid)
             }
             annVM.startListening()
+            eomVM.startListening()
         }
-        .onDisappear { annVM.stopListening() }
+        .onDisappear {
+            annVM.stopListening()
+            eomVM.stopListening()
+        }
     }
 
     // ====================================================================
@@ -196,6 +201,16 @@ struct ProjectLeadDashboardView: View {
                          title: "Track My Issue",
                          color: Color(hex: "#A78BFA")) { showMyIssues = true }
                 }
+            }
+
+            // ── Employee of the Month ────────────────────────────────────
+            if let award = eomVM.current {
+                EmployeeOfMonthCard(
+                    award: award,
+                    isHighlighted: award.employeeID == appState.currentUser?.id
+                )
+            } else {
+                EmployeeOfMonthEmptyCard()
             }
 
             // ── Tech News ────────────────────────────────────────────────
