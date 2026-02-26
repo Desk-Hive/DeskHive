@@ -57,6 +57,41 @@ service cloud.firestore {
     }
 
     // -----------------------------------------------------------------------
+    // communities collection  (microcommunities)
+    // -----------------------------------------------------------------------
+    match /communities/{communityID} {
+      // Only admin can create, read, update, delete communities
+      allow read, write: if isAdmin();
+
+      // Feed subcollection — community members + admin can read & create
+      match /feed/{messageID} {
+        allow read, create: if isAdmin()
+                            || (isAuth() && resource == null)
+                            || isAuth();
+        // Only admin can delete messages
+        allow delete: if isAdmin();
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // issues collection  (anonymous issue reporting)
+    // -----------------------------------------------------------------------
+    match /issues/{issueID} {
+
+      // WRITE (create)
+      // • Anyone — including unauthenticated users — may submit an issue.
+      //   No UID is stored, so the report is truly anonymous.
+      allow create: if true;
+
+      // READ + UPDATE
+      // • Only admin can read all issues and update status / adminResponse.
+      allow read, update: if isAdmin();
+
+      // DELETE — reserved for admin only
+      allow delete: if isAdmin();
+    }
+
+    // -----------------------------------------------------------------------
     // Deny everything else by default
     // -----------------------------------------------------------------------
     match /{document=**} {

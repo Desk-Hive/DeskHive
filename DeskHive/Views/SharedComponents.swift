@@ -175,3 +175,73 @@ struct DeskHiveCard<Content: View>: View {
             .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
     }
 }
+
+// MARK: - Role Banner Card
+struct RoleBannerCard: View {
+    let role: UserRole
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: roleIcon)
+                .font(.system(size: 24))
+                .foregroundColor(roleColor)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Your Role")
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.5))
+                Text(role.displayName)
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+            }
+            Spacer()
+            ZStack {
+                Circle().fill(roleColor.opacity(0.15)).frame(width: 36, height: 36)
+                Circle().stroke(roleColor.opacity(0.3), lineWidth: 1).frame(width: 36, height: 36)
+                Image(systemName: "checkmark").font(.system(size: 14, weight: .bold)).foregroundColor(roleColor)
+            }
+        }
+        .padding(16)
+        .background(roleColor.opacity(0.08))
+        .cornerRadius(16)
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(roleColor.opacity(0.3), lineWidth: 1))
+    }
+
+    var roleColor: Color {
+        switch role {
+        case .admin:       return Color(hex: "#E94560")
+        case .projectLead: return Color(hex: "#F5A623")
+        case .employee:    return Color(hex: "#4ECDC4")
+        }
+    }
+
+    var roleIcon: String {
+        switch role {
+        case .admin:       return "shield.checkered"
+        case .projectLead: return "star.fill"
+        case .employee:    return "person.fill"
+        }
+    }
+}
+
+// MARK: - Info Row
+struct InfoRow: View {
+    let icon: String
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .foregroundColor(.white.opacity(0.5))
+                .frame(width: 20)
+            Text(title)
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.6))
+            Spacer()
+            Text(value)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white)
+                .lineLimit(1)
+        }
+    }
+}

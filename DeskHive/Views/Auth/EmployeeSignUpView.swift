@@ -1,14 +1,15 @@
 //
-//  AdminSignUpView.swift
+//  EmployeeSignUpView.swift
 //  DeskHive
 //
 
 import SwiftUI
 
-struct AdminSignUpView: View {
+struct EmployeeSignUpView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = AuthViewModel()
 
+    @State private var fullName: String = ""
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var confirmPassword: String = ""
@@ -27,26 +28,26 @@ struct AdminSignUpView: View {
                             Circle()
                                 .fill(
                                     LinearGradient(
-                                        gradient: Gradient(colors: [Color(hex: "#F5A623"), Color(hex: "#E94560")]),
+                                        gradient: Gradient(colors: [Color(hex: "#4ECDC4"), Color(hex: "#44A8B3")]),
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     )
                                 )
                                 .frame(width: 80, height: 80)
-                                .shadow(color: Color(hex: "#F5A623").opacity(0.5), radius: 15, x: 0, y: 8)
+                                .shadow(color: Color(hex: "#4ECDC4").opacity(0.5), radius: 15, x: 0, y: 8)
 
-                            Image(systemName: "shield.checkered")
+                            Image(systemName: "person.badge.plus")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 36, height: 36)
                                 .foregroundColor(.white)
                         }
 
-                        Text("Admin Registration")
+                        Text("Employee Registration")
                             .font(.system(size: 28, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
 
-                        Text("Create an admin account to manage your workspace")
+                        Text("Create your employee account")
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(.white.opacity(0.6))
                             .multilineTextAlignment(.center)
@@ -56,7 +57,13 @@ struct AdminSignUpView: View {
                     DeskHiveCard {
                         VStack(spacing: 16) {
                             DeskHiveTextField(
-                                placeholder: "Admin email address",
+                                placeholder: "Full name",
+                                text: $fullName,
+                                icon: "person"
+                            )
+
+                            DeskHiveTextField(
+                                placeholder: "Email address",
                                 text: $email,
                                 icon: "envelope"
                             )
@@ -84,12 +91,13 @@ struct AdminSignUpView: View {
                                 SuccessBanner(message: success)
                             }
 
-                            PrimaryButton(title: "Create Admin Account", isLoading: viewModel.isLoading) {
+                            PrimaryButton(title: "Create Employee Account", isLoading: viewModel.isLoading) {
                                 Task {
-                                    await viewModel.adminSignUp(
+                                    await viewModel.employeeSignUp(
                                         email: email,
                                         password: password,
                                         confirmPassword: confirmPassword,
+                                        fullName: fullName,
                                         appState: appState
                                     )
                                 }
@@ -111,6 +119,6 @@ struct AdminSignUpView: View {
 }
 
 #Preview {
-    AdminSignUpView()
+    EmployeeSignUpView()
         .environmentObject(AppState())
 }

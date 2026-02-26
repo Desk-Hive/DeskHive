@@ -9,12 +9,12 @@ struct AdminDashboardView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var adminVM = AdminViewModel()
     @StateObject private var authVM = AuthViewModel()
+    @StateObject private var communityVM = CommunityViewModel()
 
     @State private var selectedTab: AdminTab = .home
-    @State private var showAddMemberSheet = false
 
     enum AdminTab {
-        case home, members
+        case home, employees, communities, announcements, issues
     }
 
     var body: some View {
@@ -33,9 +33,7 @@ struct AdminDashboardView: View {
                             .foregroundColor(.white)
                     }
                     Spacer()
-                    Button(action: {
-                        authVM.signOut(appState: appState)
-                    }) {
+                    Button(action: { authVM.signOut(appState: appState) }) {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
                             .foregroundColor(.white.opacity(0.8))
                             .frame(width: 38, height: 38)
@@ -48,30 +46,45 @@ struct AdminDashboardView: View {
                 .padding(.bottom, 20)
 
                 // Tab Selector
-                HStack(spacing: 0) {
-                    TabButton(title: "Home", icon: "square.grid.2x2", selected: selectedTab == .home) {
-                        selectedTab = .home
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 0) {
+                        TabButton(title: "Home", icon: "square.grid.2x2", selected: selectedTab == .home) {
+                            selectedTab = .home
+                        }
+                        TabButton(title: "Employees", icon: "person.3", selected: selectedTab == .employees) {
+                            selectedTab = .employees
+                            Task { await adminVM.fetchMembers() }
+                        }
+                        TabButton(title: "Communities", icon: "person.3.sequence.fill", selected: selectedTab == .communities) {
+                            selectedTab = .communities
+                        }
+                        TabButton(title: "Announce", icon: "megaphone.fill", selected: selectedTab == .announcements) {
+                            selectedTab = .announcements
+                        }
+                        TabButton(title: "Issues", icon: "exclamationmark.shield.fill", selected: selectedTab == .issues) {
+                            selectedTab = .issues
+                            Task { await adminVM.fetchIssues() }
+                        }
                     }
-                    TabButton(title: "Members", icon: "person.3", selected: selectedTab == .members) {
-                        selectedTab = .members
-                        Task { await adminVM.fetchMembers() }
-                    }
+                    .padding(.horizontal, 24)
                 }
-                .padding(.horizontal, 24)
                 .padding(.bottom, 20)
 
                 // Content
-                ScrollView(showsIndicators: false) {
+                ScrollView(showsIndicators: true) {
                     if selectedTab == .home {
                         homeContent
+                    } else if selectedTab == .employees {
+                        employeesContent
+                    } else if selectedTab == .communities {
+                        AdminCommunitiesView(communityVM: communityVM, adminVM: adminVM)
+                    } else if selectedTab == .announcements {
+                        AdminAnnouncementsView()
                     } else {
-                        membersContent
+                        AdminIssuesView(adminVM: adminVM)
                     }
                 }
             }
-        }
-        .sheet(isPresented: $showAddMemberSheet) {
-            AddMemberSheet(adminVM: adminVM)
         }
     }
 
@@ -81,15 +94,15 @@ struct AdminDashboardView: View {
             // Stats cards
             HStack(spacing: 16) {
                 StatCard(
-                    title: "Total Members",
-                    value: "\(adminVM.members.filter { $0.role == .member }.count)",
+                    title: "Total Employees",
+                    value: "\(adminVM.members.filter { $0.role == .employee }.count)",
                     icon: "person.2.fill",
                     color: Color(hex: "#4ECDC4")
                 )
                 StatCard(
-                    title: "Project Leads",
-                    value: "\(adminVM.members.filter { $0.role == .projectLead }.count)",
-                    icon: "star.fill",
+                    title: "Communities",
+                    value: "\(communityVM.communities.count)",
+                    icon: "person.3.sequence.fill",
                     color: Color(hex: "#F5A623")
                 )
             }
@@ -102,22 +115,41 @@ struct AdminDashboardView: View {
                     .foregroundColor(.white)
 
                 ActionCard(
-                    title: "Add New Member",
-                    subtitle: "Create member account & send credentials",
-                    icon: "person.badge.plus",
-                    color: Color(hex: "#E94560")
-                ) {
-                    showAddMemberSheet = true
-                }
-
-                ActionCard(
-                    title: "Manage Members",
-                    subtitle: "View and manage all team members",
+                    title: "View Employees",
+                    subtitle: "See all employees registered in the app",
                     icon: "person.3.fill",
                     color: Color(hex: "#4ECDC4")
                 ) {
-                    selectedTab = .members
+                    selectedTab = .employees
                     Task { await adminVM.fetchMembers() }
+                }
+
+                ActionCard(
+                    title: "Microcommunities",
+                    subtitle: "Create and manage project communities",
+                    icon: "person.3.sequence.fill",
+                    color: Color(hex: "#F5A623")
+                ) {
+                    selectedTab = .communities
+                }
+
+                ActionCard(
+                    title: "Announcements",
+                    subtitle: "Post official messages to all employees",
+                    icon: "megaphone.fill",
+                    color: Color(hex: "#4ECDC4")
+                ) {
+                    selectedTab = .announcements
+                }
+
+                ActionCard(
+                    title: "Review Issues",
+                    subtitle: "View and respond to anonymous reports",
+                    icon: "exclamationmark.shield.fill",
+                    color: Color(hex: "#A78BFA")
+                ) {
+                    selectedTab = .issues
+                    Task { await adminVM.fetchIssues() }
                 }
             }
             .padding(.horizontal, 24)
@@ -126,36 +158,27 @@ struct AdminDashboardView: View {
         }
         .task {
             await adminVM.fetchMembers()
+            await communityVM.fetchCommunities()
+            await communityVM.fetchCommunities()
+            await communityVM.fetchCommunities()
         }
     }
 
-    // MARK: - Members Tab
-    var membersContent: some View {
+    // MARK: - Employees Tab (read-only)
+    var employeesContent: some View {
         VStack(spacing: 16) {
-            // Header row
+            // Header
             HStack {
-                Text("Team Members")
+                Text("All Employees")
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                 Spacer()
-                Button(action: { showAddMemberSheet = true }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "plus")
-                        Text("Add")
-                    }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Color(hex: "#E94560"))
-                    .cornerRadius(10)
-                }
+                Text("\(adminVM.members.count) total")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white.opacity(0.5))
             }
             .padding(.horizontal, 24)
 
-            if let msg = adminVM.successMessage {
-                SuccessBanner(message: msg).padding(.horizontal, 24)
-            }
             if let err = adminVM.errorMessage {
                 ErrorBanner(message: err).padding(.horizontal, 24)
             }
@@ -167,16 +190,14 @@ struct AdminDashboardView: View {
             } else if adminVM.members.isEmpty {
                 EmptyStateView(
                     icon: "person.3",
-                    title: "No Members Yet",
-                    subtitle: "Add your first team member to get started."
+                    title: "No Employees Yet",
+                    subtitle: "Employees who sign up will appear here."
                 )
                 .padding(.top, 40)
             } else {
                 LazyVStack(spacing: 12) {
                     ForEach(adminVM.members) { member in
-                        MemberRow(member: member) {
-                            Task { await adminVM.toggleRole(for: member) }
-                        }
+                        EmployeeRow(member: member)
                     }
                 }
                 .padding(.horizontal, 24)
@@ -279,24 +300,31 @@ struct ActionCard: View {
     }
 }
 
-struct MemberRow: View {
+struct EmployeeRow: View {
     let member: DeskHiveUser
-    let toggleAction: () -> Void
+
+    var roleColor: Color {
+        switch member.role {
+        case .employee:    return Color(hex: "#4ECDC4")
+        case .projectLead: return Color(hex: "#F5A623")
+        case .admin:       return Color(hex: "#E94560")
+        }
+    }
 
     var body: some View {
         HStack(spacing: 14) {
             // Avatar
             ZStack {
                 Circle()
-                    .fill(avatarColor(for: member.role).opacity(0.2))
+                    .fill(roleColor.opacity(0.2))
                     .frame(width: 46, height: 46)
                 Text(member.email.prefix(1).uppercased())
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(avatarColor(for: member.role))
+                    .foregroundColor(roleColor)
             }
 
             // Info
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(member.email)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
@@ -306,19 +334,14 @@ struct MemberRow: View {
 
             Spacer()
 
-            // Toggle button
-            Button(action: toggleAction) {
-                Text(member.role == .member ? "Make Lead" : "Remove Lead")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(member.role == .member ? Color(hex: "#F5A623") : Color(hex: "#4ECDC4"))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background((member.role == .member ? Color(hex: "#F5A623") : Color(hex: "#4ECDC4")).opacity(0.15))
-                    .cornerRadius(8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke((member.role == .member ? Color(hex: "#F5A623") : Color(hex: "#4ECDC4")).opacity(0.4), lineWidth: 1)
-                    )
+            // Joined date
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("Joined")
+                    .font(.system(size: 10))
+                    .foregroundColor(.white.opacity(0.3))
+                Text(shortDate(member.createdAt))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.5))
             }
         }
         .padding(14)
@@ -327,12 +350,10 @@ struct MemberRow: View {
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.1), lineWidth: 1))
     }
 
-    func avatarColor(for role: UserRole) -> Color {
-        switch role {
-        case .member: return Color(hex: "#4ECDC4")
-        case .projectLead: return Color(hex: "#F5A623")
-        case .admin: return Color(hex: "#E94560")
-        }
+    private func shortDate(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "MMM d, yyyy"
+        return f.string(from: date)
     }
 }
 
@@ -351,9 +372,9 @@ struct RoleBadge: View {
 
     var badgeColor: Color {
         switch role {
-        case .admin: return Color(hex: "#E94560")
+        case .admin:       return Color(hex: "#E94560")
         case .projectLead: return Color(hex: "#F5A623")
-        case .member: return Color(hex: "#4ECDC4")
+        case .employee:    return Color(hex: "#4ECDC4")
         }
     }
 }

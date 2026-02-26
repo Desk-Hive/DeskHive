@@ -8,13 +8,13 @@ import FirebaseFirestore
 
 enum UserRole: String, Codable {
     case admin = "admin"
-    case member = "member"
+    case employee = "employee"
     case projectLead = "projectLead"
 
     var displayName: String {
         switch self {
-        case .admin: return "Admin"
-        case .member: return "Member"
+        case .admin:       return "Admin"
+        case .employee:    return "Employee"
         case .projectLead: return "Project Lead"
         }
     }

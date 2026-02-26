@@ -46,11 +46,14 @@ struct RootView: View {
             case .adminSignUp:
                 AdminSignUpView()
                     .transition(.opacity)
+            case .employeeSignUp:
+                EmployeeSignUpView()
+                    .transition(.opacity)
             case .adminDashboard:
                 AdminDashboardView()
                     .transition(.opacity)
-            case .memberDashboard:
-                MemberDashboardView()
+            case .employeeDashboard:
+                EmployeeDashboardView()
                     .transition(.opacity)
             case .projectLeadDashboard:
                 ProjectLeadDashboardView()

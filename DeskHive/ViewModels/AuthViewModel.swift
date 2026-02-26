@@ -44,7 +44,7 @@ class AuthViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Admin Sign-Up (only once)
+    // MARK: - Admin Sign-Up
     func adminSignUp(email: String, password: String, confirmPassword: String, appState: AppState) async {
         errorMessage = nil
         successMessage = nil
@@ -65,18 +65,6 @@ class AuthViewModel: ObservableObject {
         isLoading = true
 
         do {
-            // Check if an admin already exists
-            let snapshot = try await db.collection("users")
-                .whereField("role", isEqualTo: "admin")
-                .limit(to: 1)
-                .getDocuments()
-
-            if !snapshot.documents.isEmpty {
-                isLoading = false
-                errorMessage = "An admin account already exists. Please log in instead."
-                return
-            }
-
             // Create Firebase Auth user
             let result = try await Auth.auth().createUser(withEmail: email, password: password)
             let uid = result.user.uid
@@ -87,6 +75,44 @@ class AuthViewModel: ObservableObject {
 
             isLoading = false
             appState.navigateAfterLogin(user: user)
+        } catch let error as NSError {
+            isLoading = false
+            errorMessage = mapAuthError(error)
+        }
+    }
+
+    // MARK: - Employee Sign-Up
+    func employeeSignUp(email: String, password: String, confirmPassword: String, fullName: String, appState: AppState) async {
+        errorMessage = nil
+        successMessage = nil
+
+        guard !email.isEmpty, !password.isEmpty, !fullName.isEmpty else {
+            errorMessage = "Please fill in all fields."
+            return
+        }
+        guard password == confirmPassword else {
+            errorMessage = "Passwords do not match."
+            return
+        }
+        guard password.count >= 6 else {
+            errorMessage = "Password must be at least 6 characters."
+            return
+        }
+
+        isLoading = true
+
+        do {
+            let result = try await Auth.auth().createUser(withEmail: email, password: password)
+            let uid = result.user.uid
+
+            var userData = DeskHiveUser(id: uid, email: email, role: .employee)
+            var firestorePayload = userData.firestoreData
+            firestorePayload["fullName"] = fullName
+
+            try await db.collection("users").document(uid).setData(firestorePayload)
+
+            isLoading = false
+            appState.navigateAfterLogin(user: userData)
         } catch let error as NSError {
             isLoading = false
             errorMessage = mapAuthError(error)
@@ -124,7 +150,7 @@ class AuthViewModel: ObservableObject {
 
     // MARK: - Map Firebase errors to user-friendly messages
     private func mapAuthError(_ error: NSError) -> String {
-        let code = AuthErrorCode(_nsError: error).code
+        guard let code = AuthErrorCode(rawValue: error.code) else { return error.localizedDescription }
         switch code {
         case .wrongPassword, .invalidCredential:
             return "Invalid email or password. Please try again."

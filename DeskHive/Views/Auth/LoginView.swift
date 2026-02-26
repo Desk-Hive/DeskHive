@@ -11,6 +11,25 @@ struct LoginView: View {
 
     @State private var email: String = ""
     @State private var password: String = ""
+    @State private var selectedRole: LoginRole = .employee
+
+    enum LoginRole: String, CaseIterable {
+        case employee = "Employee"
+        case admin    = "Admin"
+
+        var icon: String {
+            switch self {
+            case .employee: return "person.fill"
+            case .admin:    return "shield.checkered"
+            }
+        }
+        var accentColor: Color {
+            switch self {
+            case .employee: return Color(hex: "#4ECDC4")
+            case .admin:    return Color(hex: "#F5A623")
+            }
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -50,11 +69,49 @@ struct LoginView: View {
                             .foregroundColor(.white.opacity(0.6))
                     }
 
+                    // Role Selector
+                    HStack(spacing: 0) {
+                        ForEach(LoginRole.allCases, id: \.self) { role in
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedRole = role
+                                    viewModel.errorMessage = nil
+                                }
+                            }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: role.icon)
+                                        .font(.system(size: 13))
+                                    Text(role.rawValue)
+                                        .font(.system(size: 14, weight: .semibold))
+                                }
+                                .foregroundColor(selectedRole == role ? .white : .white.opacity(0.4))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(
+                                    selectedRole == role
+                                    ? role.accentColor.opacity(0.25)
+                                    : Color.clear
+                                )
+                                .overlay(
+                                    selectedRole == role
+                                    ? RoundedRectangle(cornerRadius: 12)
+                                        .stroke(role.accentColor.opacity(0.6), lineWidth: 1)
+                                    : nil
+                                )
+                                .cornerRadius(12)
+                            }
+                        }
+                    }
+                    .padding(4)
+                    .background(Color.white.opacity(0.07))
+                    .cornerRadius(14)
+                    .padding(.horizontal, 24)
+
                     // Form Card
                     DeskHiveCard {
                         VStack(spacing: 16) {
                             DeskHiveTextField(
-                                placeholder: "Email address",
+                                placeholder: "\(selectedRole.rawValue) email address",
                                 text: $email,
                                 icon: "envelope"
                             )
@@ -71,7 +128,7 @@ struct LoginView: View {
                                 ErrorBanner(message: error)
                             }
 
-                            PrimaryButton(title: "Sign In", isLoading: viewModel.isLoading) {
+                            PrimaryButton(title: "Sign In as \(selectedRole.rawValue)", isLoading: viewModel.isLoading) {
                                 Task {
                                     await viewModel.login(email: email, password: password, appState: appState)
                                 }
@@ -81,14 +138,42 @@ struct LoginView: View {
                     }
                     .padding(.horizontal, 24)
 
-                    // Admin sign-up link
-                    VStack(spacing: 6) {
-                        Text("First time setup?")
+                    // Register links
+                    VStack(spacing: 12) {
+                        Text("Don't have an account?")
                             .font(.system(size: 14))
                             .foregroundColor(.white.opacity(0.5))
 
-                        SecondaryButton(title: "Register as Admin") {
-                            appState.currentScreen = .adminSignUp
+                        HStack(spacing: 16) {
+                            // Employee Register
+                            Button(action: { appState.currentScreen = .employeeSignUp }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "person.badge.plus")
+                                    Text("Register as Employee")
+                                }
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(Color(hex: "#4ECDC4"))
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 16)
+                                .background(Color(hex: "#4ECDC4").opacity(0.1))
+                                .cornerRadius(10)
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "#4ECDC4").opacity(0.3), lineWidth: 1))
+                            }
+
+                            // Admin Register
+                            Button(action: { appState.currentScreen = .adminSignUp }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "shield.checkered")
+                                    Text("Register as Admin")
+                                }
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(Color(hex: "#F5A623"))
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 16)
+                                .background(Color(hex: "#F5A623").opacity(0.1))
+                                .cornerRadius(10)
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "#F5A623").opacity(0.3), lineWidth: 1))
+                            }
                         }
                     }
 

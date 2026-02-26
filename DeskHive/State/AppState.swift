@@ -10,8 +10,9 @@ enum AppScreen: Equatable {
     case splash
     case login
     case adminSignUp
+    case employeeSignUp
     case adminDashboard
-    case memberDashboard
+    case employeeDashboard
     case projectLeadDashboard
 }
 
@@ -23,7 +24,7 @@ class AppState: ObservableObject {
         currentUser = user
         switch user.role {
         case .admin:       currentScreen = .adminDashboard
-        case .member:      currentScreen = .memberDashboard
+        case .employee:      currentScreen = .employeeDashboard
         case .projectLead: currentScreen = .projectLeadDashboard
         }
     }
