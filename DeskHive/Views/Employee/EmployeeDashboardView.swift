@@ -14,6 +14,7 @@ struct EmployeeDashboardView: View {
     @State private var showCheckIn    = false
     @State private var showIssueReport = false
     @State private var showMyIssues    = false
+    @State private var showNews        = false
     @StateObject private var issueVM  = IssueReportViewModel()
 
     enum EmployeeTab { case home, communities, work, inbox, profile }
@@ -90,6 +91,9 @@ struct EmployeeDashboardView: View {
         }
         .sheet(isPresented: $showMyIssues) {
             MyIssuesView(viewModel: issueVM).environmentObject(appState)
+        }
+        .sheet(isPresented: $showNews) {
+            TechNewsView()
         }
         .task {
             if let uid = appState.currentUser?.id {
@@ -258,6 +262,12 @@ struct EmployeeDashboardView: View {
                     }
                 }
             }
+
+            // ── Tech News ────────────────────────────────────────────────
+            NewsPreviewSection(accentColor: Color(hex: "#4ECDC4")) {
+                showNews = true
+            }
+
         }
         .padding(.top, 4)
     }

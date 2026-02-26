@@ -12,6 +12,7 @@ struct AdminDashboardView: View {
     @StateObject private var communityVM = CommunityViewModel()
 
     @State private var selectedTab: AdminTab = .home
+    @State private var showNews: Bool = false
 
     enum AdminTab {
         case home, employees, communities, announcements, issues
@@ -86,6 +87,9 @@ struct AdminDashboardView: View {
                 }
             }
         }
+        .sheet(isPresented: $showNews) {
+            TechNewsView()
+        }
     }
 
     // MARK: - Home Tab
@@ -151,6 +155,12 @@ struct AdminDashboardView: View {
                     selectedTab = .issues
                     Task { await adminVM.fetchIssues() }
                 }
+            }
+            .padding(.horizontal, 24)
+
+            // ── Tech News ────────────────────────────────────────────────
+            NewsPreviewSection(accentColor: Color(hex: "#E94560")) {
+                showNews = true
             }
             .padding(.horizontal, 24)
 

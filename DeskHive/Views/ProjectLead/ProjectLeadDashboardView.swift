@@ -19,6 +19,7 @@ struct ProjectLeadDashboardView: View {
     @State private var showIssueReport = false
     @State private var showMyIssues    = false
     @State private var showFeed        = false
+    @State private var showNews        = false
 
     enum PLTab { case home, project, tasks, inbox, profile }
 
@@ -84,6 +85,9 @@ struct ProjectLeadDashboardView: View {
         }
         .sheet(isPresented: $showMyIssues) {
             MyIssuesView(viewModel: issueVM).environmentObject(appState)
+        }
+        .sheet(isPresented: $showNews) {
+            TechNewsView()
         }
         .fullScreenCover(isPresented: $showFeed) {
             if let community = myCommunity {
@@ -193,6 +197,12 @@ struct ProjectLeadDashboardView: View {
                          color: Color(hex: "#A78BFA")) { showMyIssues = true }
                 }
             }
+
+            // ── Tech News ────────────────────────────────────────────────
+            NewsPreviewSection(accentColor: Color(hex: "#F5A623")) {
+                showNews = true
+            }
+
         }
         .padding(.top, 4)
     }
@@ -603,24 +613,6 @@ struct ProjectLeadDashboardView: View {
                 .first { $0.projectLeadID == uid }
         } catch { }
         isLoadingCommunity = false
-    }
-}
-
-// MARK: - RoundedCorner helper
-extension View {
-    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-        clipShape(RoundedCorner(radius: radius, corners: corners))
-    }
-}
-
-private struct RoundedCorner: Shape {
-    var radius: CGFloat
-    var corners: UIRectCorner
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(roundedRect: rect,
-                                byRoundingCorners: corners,
-                                cornerRadii: CGSize(width: radius, height: radius))
-        return Path(path.cgPath)
     }
 }
 
