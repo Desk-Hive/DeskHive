@@ -34,6 +34,7 @@ struct DeskHiveUser: Identifiable, Codable {
     }
 
     init?(id: String, data: [String: Any]) {
+        // Firestore decoding is intentionally strict to avoid routing users with malformed roles.
         guard
             let email = data["email"] as? String,
             let roleRaw = data["role"] as? String,
@@ -47,11 +48,13 @@ struct DeskHiveUser: Identifiable, Codable {
         if let ts = data["createdAt"] as? Timestamp {
             self.createdAt = ts.dateValue()
         } else {
+            // Fall back for older/migrated docs that predate createdAt.
             self.createdAt = Date()
         }
     }
 
     var firestoreData: [String: Any] {
+        // Keep Firestore keys centralized to avoid drift between auth flows.
         [
             "email": email,
             "role": role.rawValue,

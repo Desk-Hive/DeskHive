@@ -17,6 +17,7 @@ class AuthViewModel: ObservableObject {
 
     // MARK: - Login
     func login(email: String, password: String, appState: AppState) async {
+        // Keep validation in the view model so all login entry points share the same rules.
         guard !email.isEmpty, !password.isEmpty else {
             errorMessage = "Please enter your email and password."
             return
@@ -29,6 +30,7 @@ class AuthViewModel: ObservableObject {
             let result = try await Auth.auth().signIn(withEmail: email, password: password)
             let uid = result.user.uid
 
+            // Auth user exists, but role-based routing depends on the Firestore profile document.
             let doc = try await db.collection("users").document(uid).getDocument()
             guard let data = doc.data(), let user = DeskHiveUser(id: uid, data: data) else {
                 errorMessage = "Account data not found. Please contact your admin."
@@ -49,6 +51,7 @@ class AuthViewModel: ObservableObject {
         errorMessage = nil
         successMessage = nil
 
+        // Client-side checks provide immediate feedback before Firebase validation.
         guard !email.isEmpty, !password.isEmpty else {
             errorMessage = "Please fill in all fields."
             return
@@ -107,6 +110,7 @@ class AuthViewModel: ObservableObject {
 
             var userData = DeskHiveUser(id: uid, email: email, role: .employee)
             var firestorePayload = userData.firestoreData
+            // Keep full name outside the base model payload to preserve model portability.
             firestorePayload["fullName"] = fullName
 
             try await db.collection("users").document(uid).setData(firestorePayload)
@@ -131,6 +135,7 @@ class AuthViewModel: ObservableObject {
 
     // MARK: - Restore session on app launch
     func restoreSession(appState: AppState) async {
+        // If Firebase has no active user, route to login immediately.
         guard let currentUser = Auth.auth().currentUser else {
             appState.currentScreen = .login
             return
@@ -141,6 +146,7 @@ class AuthViewModel: ObservableObject {
             if let data = doc.data(), let user = DeskHiveUser(id: currentUser.uid, data: data) {
                 appState.navigateAfterLogin(user: user)
             } else {
+                // Missing/invalid profile data should not keep a stale session alive.
                 appState.currentScreen = .login
             }
         } catch {
