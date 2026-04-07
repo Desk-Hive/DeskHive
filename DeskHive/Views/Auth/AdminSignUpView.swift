@@ -86,6 +86,7 @@ struct AdminSignUpView: View {
 
                             PrimaryButton(title: "Create Admin Account", isLoading: viewModel.isLoading) {
                                 Task {
+                                    // Account creation + role document provisioning are handled in the auth view model.
                                     await viewModel.adminSignUp(
                                         email: email,
                                         password: password,

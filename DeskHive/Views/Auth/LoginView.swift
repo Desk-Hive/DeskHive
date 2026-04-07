@@ -74,6 +74,7 @@ struct LoginView: View {
                         ForEach(LoginRole.allCases, id: \.self) { role in
                             Button(action: {
                                 withAnimation(.easeInOut(duration: 0.2)) {
+                                    // Role selection is currently a UI hint only; server-side role checks remain authoritative.
                                     selectedRole = role
                                     viewModel.errorMessage = nil
                                 }
@@ -130,6 +131,7 @@ struct LoginView: View {
 
                             PrimaryButton(title: "Sign In as \(selectedRole.rawValue)", isLoading: viewModel.isLoading) {
                                 Task {
+                                    // AuthViewModel handles validation + Firebase auth + Firestore profile lookup.
                                     await viewModel.login(email: email, password: password, appState: appState)
                                 }
                             }
