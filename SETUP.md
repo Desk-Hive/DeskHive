@@ -90,3 +90,16 @@ firebase.json                     # Firebase project config
      stores Firestore doc, sends welcome email (password never visible to admin)
 4. Member logs in with credentials from email → MemberDashboard
 5. ProjectLead logs in → ProjectLeadDashboard
+
+## Authentication Notes (No-Behavior Setup Reference)
+- Firebase Auth is the source of truth for credentials.
+- Firestore `users/{uid}` is the source of truth for role-based navigation.
+- Login succeeds only when both Auth sign-in and Firestore profile lookup succeed.
+- If profile data is missing or invalid, the app routes back to login.
+
+## Auth Smoke Test Checklist
+1. Register an admin account from the login screen.
+2. Confirm an admin profile document is created in `users/{uid}` with role `admin`.
+3. Sign out and sign in again using the same admin account.
+4. Verify session restore returns the same user role on relaunch.
+5. Validate a wrong-password attempt shows a friendly auth error message.
