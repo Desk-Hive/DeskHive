@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import Combine
 import FirebaseAuth
 import FirebaseFirestore
 
@@ -17,7 +18,6 @@ class AuthViewModel: ObservableObject {
 
     // MARK: - Login
     func login(email: String, password: String, appState: AppState) async {
-        // Keep validation in the view model so all login entry points share the same rules.
         guard !email.isEmpty, !password.isEmpty else {
             errorMessage = "Please enter your email and password."
             return
@@ -30,7 +30,6 @@ class AuthViewModel: ObservableObject {
             let result = try await Auth.auth().signIn(withEmail: email, password: password)
             let uid = result.user.uid
 
-            // Auth user exists, but role-based routing depends on the Firestore profile document.
             let doc = try await db.collection("users").document(uid).getDocument()
             guard let data = doc.data(), let user = DeskHiveUser(id: uid, data: data) else {
                 errorMessage = "Account data not found. Please contact your admin."
@@ -46,12 +45,11 @@ class AuthViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Admin Sign-Up
+    // MARK: - Admin Sign-Up (only once)
     func adminSignUp(email: String, password: String, confirmPassword: String, appState: AppState) async {
         errorMessage = nil
         successMessage = nil
 
-        // Client-side checks provide immediate feedback before Firebase validation.
         guard !email.isEmpty, !password.isEmpty else {
             errorMessage = "Please fill in all fields."
             return
@@ -68,6 +66,18 @@ class AuthViewModel: ObservableObject {
         isLoading = true
 
         do {
+            // Check if an admin already exists
+            let snapshot = try await db.collection("users")
+                .whereField("role", isEqualTo: "admin")
+                .limit(to: 1)
+                .getDocuments()
+
+            if !snapshot.documents.isEmpty {
+                isLoading = false
+                errorMessage = "An admin account already exists. Please log in instead."
+                return
+            }
+
             // Create Firebase Auth user
             let result = try await Auth.auth().createUser(withEmail: email, password: password)
             let uid = result.user.uid
@@ -78,45 +88,6 @@ class AuthViewModel: ObservableObject {
 
             isLoading = false
             appState.navigateAfterLogin(user: user)
-        } catch let error as NSError {
-            isLoading = false
-            errorMessage = mapAuthError(error)
-        }
-    }
-
-    // MARK: - Employee Sign-Up
-    func employeeSignUp(email: String, password: String, confirmPassword: String, fullName: String, appState: AppState) async {
-        errorMessage = nil
-        successMessage = nil
-
-        guard !email.isEmpty, !password.isEmpty, !fullName.isEmpty else {
-            errorMessage = "Please fill in all fields."
-            return
-        }
-        guard password == confirmPassword else {
-            errorMessage = "Passwords do not match."
-            return
-        }
-        guard password.count >= 6 else {
-            errorMessage = "Password must be at least 6 characters."
-            return
-        }
-
-        isLoading = true
-
-        do {
-            let result = try await Auth.auth().createUser(withEmail: email, password: password)
-            let uid = result.user.uid
-
-            var userData = DeskHiveUser(id: uid, email: email, role: .employee)
-            var firestorePayload = userData.firestoreData
-            // Keep full name outside the base model payload to preserve model portability.
-            firestorePayload["fullName"] = fullName
-
-            try await db.collection("users").document(uid).setData(firestorePayload)
-
-            isLoading = false
-            appState.navigateAfterLogin(user: userData)
         } catch let error as NSError {
             isLoading = false
             errorMessage = mapAuthError(error)
@@ -135,7 +106,6 @@ class AuthViewModel: ObservableObject {
 
     // MARK: - Restore session on app launch
     func restoreSession(appState: AppState) async {
-        // If Firebase has no active user, route to login immediately.
         guard let currentUser = Auth.auth().currentUser else {
             appState.currentScreen = .login
             return
@@ -146,7 +116,6 @@ class AuthViewModel: ObservableObject {
             if let data = doc.data(), let user = DeskHiveUser(id: currentUser.uid, data: data) {
                 appState.navigateAfterLogin(user: user)
             } else {
-                // Missing/invalid profile data should not keep a stale session alive.
                 appState.currentScreen = .login
             }
         } catch {
@@ -156,7 +125,9 @@ class AuthViewModel: ObservableObject {
 
     // MARK: - Map Firebase errors to user-friendly messages
     private func mapAuthError(_ error: NSError) -> String {
-        guard let code = AuthErrorCode(rawValue: error.code) else { return error.localizedDescription }
+        guard let code = AuthErrorCode(_bridgedNSError: error)?.code else {
+            return error.localizedDescription
+        }
         switch code {
         case .wrongPassword, .invalidCredential:
             return "Invalid email or password. Please try again."

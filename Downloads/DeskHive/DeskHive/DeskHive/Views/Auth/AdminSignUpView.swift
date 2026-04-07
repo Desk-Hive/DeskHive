@@ -46,11 +46,26 @@ struct AdminSignUpView: View {
                             .font(.system(size: 28, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
 
-                        Text("Create an admin account to manage your workspace")
+                        Text("Only one admin account is allowed")
                             .font(.system(size: 14, weight: .regular))
                             .foregroundColor(.white.opacity(0.6))
                             .multilineTextAlignment(.center)
                     }
+
+                    // Warning badge
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundColor(Color(hex: "#F5A623"))
+                        Text("This option is only available once. The first admin controls all member access.")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                            .multilineTextAlignment(.leading)
+                    }
+                    .padding(14)
+                    .background(Color(hex: "#F5A623").opacity(0.1))
+                    .cornerRadius(12)
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: "#F5A623").opacity(0.4), lineWidth: 1))
+                    .padding(.horizontal, 24)
 
                     // Form
                     DeskHiveCard {
@@ -86,7 +101,6 @@ struct AdminSignUpView: View {
 
                             PrimaryButton(title: "Create Admin Account", isLoading: viewModel.isLoading) {
                                 Task {
-                                    // Account creation + role document provisioning are handled in the auth view model.
                                     await viewModel.adminSignUp(
                                         email: email,
                                         password: password,
