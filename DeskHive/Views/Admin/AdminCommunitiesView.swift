@@ -2,25 +2,30 @@
 //  AdminCommunitiesView.swift
 //  DeskHive
 //
-//  Admin view to create and manage microcommunities.
+//  Admin view for creating and managing microcommunities (project-scoped groups).
+//  Provides a list of existing communities, a sheet to create a new one, and a
+//  detail sheet to manage members and assign a Project Lead for each community.
 //
 
 import SwiftUI
 
 // MARK: - Main list view
 
+/// Root list screen for the Communities tab in the admin dashboard.
+/// Shows all microcommunities and lets the admin create new ones or delete existing ones.
 struct AdminCommunitiesView: View {
-    @ObservedObject var communityVM: CommunityViewModel
-    @ObservedObject var adminVM: AdminViewModel
+    @ObservedObject var communityVM: CommunityViewModel  // Drives the community list
+    @ObservedObject var adminVM: AdminViewModel           // Provides the member list for pickers
     @EnvironmentObject var appState: AppState
 
+    // Controls sheet presentation
     @State private var showCreateSheet = false
-    @State private var selectedCommunity: Microcommunity? = nil
+    @State private var selectedCommunity: Microcommunity? = nil  // Non-nil opens detail sheet
 
     var body: some View {
         VStack(spacing: 16) {
 
-            // Header
+            // Header — section title on the left, "New" creation button on the right
             HStack {
                 Text("Microcommunities")
                     .font(.system(size: 20, weight: .bold, design: .rounded))
@@ -41,7 +46,7 @@ struct AdminCommunitiesView: View {
             }
             .padding(.horizontal, 24)
 
-            // Banners
+            // Banners — shown below header when a recent action produced an error or success
             if let err = communityVM.errorMessage {
                 ErrorBanner(message: err).padding(.horizontal, 24)
             }
@@ -49,7 +54,7 @@ struct AdminCommunitiesView: View {
                 SuccessBanner(message: ok).padding(.horizontal, 24)
             }
 
-            // List or empty state
+            // List or empty state — shows spinner during fetch, empty prompt, or card list
             if communityVM.isLoading {
                 Spacer()
                 ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .white))
@@ -88,6 +93,7 @@ struct AdminCommunitiesView: View {
             .environmentObject(appState)
         }
         .task {
+            // Fetch communities on first load; only fetch members if not already loaded
             await communityVM.fetchCommunities()
             if adminVM.members.isEmpty { await adminVM.fetchMembers() }
         }
@@ -96,6 +102,9 @@ struct AdminCommunitiesView: View {
 
 // MARK: - Community card row
 
+/// A tappable card for a single microcommunity in the list.
+/// Shows the community name, linked project, member count, a delete button,
+/// and a chevron indicating the row opens a detail sheet.
 private struct CommunityCard: View {
     let community: Microcommunity
     let onTap: () -> Void
@@ -120,6 +129,7 @@ private struct CommunityCard: View {
                         .foregroundColor(.white)
                         .lineLimit(1)
 
+                    // Only show project label when one is assigned
                     if !community.project.isEmpty {
                         Text(community.project)
                             .font(.system(size: 11, weight: .medium))
@@ -133,7 +143,7 @@ private struct CommunityCard: View {
 
                 Spacer()
 
-                // Delete button
+                // Delete button — only visible in this card; confirmation is implicit (no alert)
                 Button(action: onDelete) {
                     Image(systemName: "trash")
                         .font(.system(size: 14))
@@ -158,15 +168,19 @@ private struct CommunityCard: View {
 
 // MARK: - Create community sheet
 
+/// Composition sheet for creating a new microcommunity.
+/// The admin fills in a name (required), optional project tag and description,
+/// then picks members from the full employee list. The community is saved to
+/// Firestore and the sheet dismisses on success.
 struct CreateCommunitySheet: View {
     @ObservedObject var communityVM: CommunityViewModel
     @ObservedObject var adminVM: AdminViewModel
     @Environment(\.dismiss) var dismiss
 
-    @State private var name        = ""
-    @State private var description = ""
-    @State private var project     = ""
-    @State private var selectedIDs = Set<String>()
+    @State private var name        = ""           // Required — community display name
+    @State private var description = ""           // Optional free-form description
+    @State private var project     = ""           // Optional project tag
+    @State private var selectedIDs = Set<String>()  // UIDs of members to add on creation
 
     var body: some View {
         ZStack {
@@ -194,7 +208,7 @@ struct CreateCommunitySheet: View {
                             .foregroundColor(.white.opacity(0.5))
                     }
 
-                    // Details card
+                    // Details card — groups the three text inputs together
                     DeskHiveCard {
                         VStack(spacing: 16) {
                             fieldBlock(label: "Community Name *", placeholder: "e.g. Alpha Team", text: $name)
@@ -205,7 +219,7 @@ struct CreateCommunitySheet: View {
                         }
                     }
 
-                    // Member picker
+                    // Member picker — multi-select list of all registered employees
                     DeskHiveCard {
                         VStack(alignment: .leading, spacing: 14) {
                             HStack {
@@ -264,12 +278,12 @@ struct CreateCommunitySheet: View {
                         }
                     }
 
-                    // Error
+                    // Inline error banner shown when community creation fails
                     if let err = communityVM.errorMessage {
                         ErrorBanner(message: err)
                     }
 
-                    // Create button
+                    // Create button — disabled and dimmed when name field is empty
                     Button(action: {
                         let selected = adminVM.members.filter { selectedIDs.contains($0.id) }
                         Task {
@@ -356,6 +370,9 @@ struct CreateCommunitySheet: View {
 
 // MARK: - Community detail / manage members sheet
 
+/// Detail sheet opened by tapping a community card.
+/// Shows community stats, a Community Feed shortcut, and a full member list
+/// where the admin can add members, remove members, and toggle the Project Lead.
 struct CommunityDetailSheet: View {
     let community: Microcommunity
     @ObservedObject var communityVM: CommunityViewModel
@@ -363,10 +380,11 @@ struct CommunityDetailSheet: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) var dismiss
 
-    @State private var showAddMember = false
-    @State private var showFeed      = false
+    @State private var showAddMember = false  // Presents AddMemberToCommunitySheet
+    @State private var showFeed      = false  // Presents the community feed view
 
-    // Live version of the community from the VM (reflects updates)
+    /// Always reads the up-to-date version of the community from the VM
+    /// so that member additions/removals are reflected instantly.
     private var live: Microcommunity {
         communityVM.communities.first(where: { $0.id == community.id }) ?? community
     }
@@ -379,7 +397,7 @@ struct CommunityDetailSheet: View {
                 VStack(spacing: 24) {
                     Spacer().frame(height: 20)
 
-                    // Header
+                    // Community header with icon, name, project tag, and description
                     VStack(spacing: 6) {
                         ZStack {
                             Circle()
@@ -405,7 +423,7 @@ struct CommunityDetailSheet: View {
                         }
                     }
 
-                    // Stats
+                    // At-a-glance stats: member count and current Project Lead name
                     HStack(spacing: 16) {
                         StatCard(
                             title: "Members",
@@ -457,7 +475,7 @@ struct CommunityDetailSheet: View {
                         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#4ECDC4").opacity(0.25), lineWidth: 1))
                     }
 
-                    // Member list
+                    // Member list card — each row has crown and remove action buttons
                     DeskHiveCard {
                         VStack(alignment: .leading, spacing: 14) {
                             HStack {
@@ -520,7 +538,8 @@ struct CommunityDetailSheet: View {
 
                                         Spacer()
 
-                                        // Crown button — assign or unassign lead
+                                        // Crown button — tap to assign as Project Lead;
+                                        // tap again to remove the lead designation
                                         Button(action: {
                                             Task {
                                                 if isLead {
@@ -539,7 +558,7 @@ struct CommunityDetailSheet: View {
                                                                  : .white.opacity(0.25))
                                         }
 
-                                        // Remove button
+                                        // Remove button — kicks the member from the community
                                         Button(action: {
                                             Task { await communityVM.removeMember(uid, from: live) }
                                         }) {

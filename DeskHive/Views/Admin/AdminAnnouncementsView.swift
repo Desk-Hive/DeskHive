@@ -2,19 +2,25 @@
 //  AdminAnnouncementsView.swift
 //  DeskHive
 //
-//  Admin panel to post and manage official announcements.
+//  Admin panel for managing broadcast announcements sent to all employees.
+//  Supports three priority levels (Info, Warning, Urgent) and allows the
+//  admin to delete any existing announcement. Announcements are persisted
+//  in Firestore and fetched once on view appearance via AnnouncementViewModel.
 //
 
 import SwiftUI
 
 struct AdminAnnouncementsView: View {
+    // Owned here so the sheet and list share the same view-model instance
     @StateObject private var annVM = AnnouncementViewModel()
+
+    // Controls presentation of the PostAnnouncementSheet
     @State private var showPost = false
 
     var body: some View {
         VStack(spacing: 16) {
 
-            // Header
+            // Header — title on the left, "Post" button on the right
             HStack {
                 Text("Announcements")
                     .font(.system(size: 20, weight: .bold, design: .rounded))
@@ -73,10 +79,15 @@ struct AdminAnnouncementsView: View {
 
 // MARK: - Admin row
 
+/// A single row in the announcements list.
+/// Displays the priority badge, title, truncated body, post date, and a delete button.
+/// The `onDelete` closure is called when the trash button is tapped; the
+/// actual Firestore deletion is performed by the parent via `annVM.deleteAnnouncement`.
 private struct AdminAnnouncementRow: View {
     let announcement: Announcement
     let onDelete: () -> Void
 
+    /// Resolves the tint colour from the announcement's priority level.
     var priorityColor: Color { Color(hex: announcement.priority.color) }
 
     var body: some View {
@@ -136,13 +147,17 @@ private struct AdminAnnouncementRow: View {
 
 // MARK: - Post announcement sheet
 
+/// Full-screen composition sheet for creating a new announcement.
+/// The admin selects a priority level, writes a title and message body,
+/// then taps "Post Announcement" to persist it to Firestore.
+/// The sheet dismisses automatically after a successful post.
 struct PostAnnouncementSheet: View {
     @ObservedObject var annVM: AnnouncementViewModel
     @Environment(\.dismiss) var dismiss
 
-    @State private var title    = ""
-    @State private var body_    = ""
-    @State private var priority = Announcement.AnnouncementPriority.info
+    @State private var title    = ""  // Announcement subject line
+    @State private var body_    = ""  // Full message body (multiline)
+    @State private var priority = Announcement.AnnouncementPriority.info  // Defaults to Info
 
     var body: some View {
         ZStack {
@@ -173,7 +188,7 @@ struct PostAnnouncementSheet: View {
                 ScrollView(showsIndicators: true) {
                     VStack(spacing: 20) {
 
-                        // Icon header
+                        // Decorative icon and subtitle shown at the top of the sheet
                         VStack(spacing: 8) {
                             ZStack {
                                 Circle()
@@ -188,7 +203,7 @@ struct PostAnnouncementSheet: View {
                                 .foregroundColor(.white.opacity(0.5))
                         }
 
-                        // Priority picker
+                        // Priority picker — tapping a level highlights it and stores the selection
                         DeskHiveCard {
                             VStack(alignment: .leading, spacing: 12) {
                                 Label("Priority", systemImage: "flag.fill")
@@ -219,7 +234,7 @@ struct PostAnnouncementSheet: View {
                             }
                         }
 
-                        // Title
+                        // Title input — required field; button stays disabled while empty
                         DeskHiveCard {
                             VStack(alignment: .leading, spacing: 8) {
                                 Label("Title *", systemImage: "pencil")
@@ -233,7 +248,7 @@ struct PostAnnouncementSheet: View {
                             }
                         }
 
-                        // Body
+                        // Message body — required; grows vertically up to 10 lines
                         DeskHiveCard {
                             VStack(alignment: .leading, spacing: 8) {
                                 Label("Message *", systemImage: "text.alignleft")
@@ -256,7 +271,8 @@ struct PostAnnouncementSheet: View {
                     .padding(.horizontal, 20)
                 }
 
-                // Pinned post button
+                // Sticky bottom bar with the "Post Announcement" action button.
+                // Disabled and dimmed until both title and body are non-empty.
                 VStack(spacing: 0) {
                     Divider().background(Color.white.opacity(0.08))
                     Button(action: {
