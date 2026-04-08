@@ -69,3 +69,5 @@ final class NewsViewModel: ObservableObject {
         await fetchTechNews()
     }
 }
+
+//newsapi was used
