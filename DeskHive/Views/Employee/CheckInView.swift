@@ -109,26 +109,6 @@ struct CheckInView: View {
                 .transition(.scale.combined(with: .opacity))
             }
 
-            // Optional note
-            DeskHiveCard {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "note.text")
-                            .foregroundColor(.white.opacity(0.5))
-                            .font(.system(size: 14))
-                        Text("Add a note (optional & anonymous)")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(.white.opacity(0.6))
-                    }
-
-                    TextField("", text: $note, prompt: Text("Share anything on your mind…").foregroundColor(.white.opacity(0.3)))
-                        .foregroundColor(.white)
-                        .tint(Color(hex: "#4ECDC4"))
-                        .frame(minHeight: 60, alignment: .topLeading)
-                        .multilineTextAlignment(.leading)
-                }
-            }
-
             // Error / success
             if let err = viewModel.errorMessage {
                 ErrorBanner(message: err)
@@ -136,9 +116,8 @@ struct CheckInView: View {
 
             // Submit button
             Button(action: {
-                guard let mood = selectedMood else { return }
                 Task {
-                    await viewModel.submitCheckIn(uid: uid, mood: mood, note: note)
+                    await viewModel.submitCheckIn(uid: uid, mood: selectedMood, note: note)
                     if viewModel.successMessage != nil {
                         withAnimation { submitted = true }
                     }
@@ -168,8 +147,7 @@ struct CheckInView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
             }
-            .disabled(selectedMood == nil || viewModel.isSubmitting)
-            .opacity(selectedMood == nil ? 0.5 : 1.0)
+            .disabled(viewModel.isSubmitting)
         }
     }
 
@@ -194,6 +172,10 @@ struct CheckInView: View {
                 if let mood = viewModel.todayMood {
                     Text(mood.emoji)
                         .font(.system(size: 48))
+                } else {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 44))
+                        .foregroundColor(Color(hex: "#4ECDC4"))
                 }
             }
             .padding(.top, 20)
@@ -207,6 +189,10 @@ struct CheckInView: View {
                     Text("Feeling \(mood.label) — \(mood.emoji)")
                         .font(.system(size: 15))
                         .foregroundColor(Color(hex: mood.color))
+                } else {
+                    Text("Thanks for checking in today! 👋")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.6))
                 }
 
                 Text("Come back tomorrow for your next check-in.")

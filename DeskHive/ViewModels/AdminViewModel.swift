@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import Combine
 import FirebaseFirestore
 import FirebaseAuth
 import FirebaseFunctions

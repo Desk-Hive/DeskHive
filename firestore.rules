@@ -35,14 +35,17 @@ service cloud.firestore {
       // READ
       // • Admin can read any user document
       // • Users can read their own document only
-      allow read: if isAdmin() || isSelf(uid);
+      // • Project leads can read all users (needed to assign tasks)
+      allow read: if isAdmin()
+                  || isSelf(uid)
+                  || (isAuth() && callerRole() == "projectLead");
 
       // CREATE
       // • Admin can create new user documents (member / projectLead)
-      // • A user may create their own document only when registering as admin
-      //   (first-time setup — guarded in app logic + Cloud Function)
+      // • A user may create their own document when self-registering as
+      //   admin, employee, or projectLead (role is set by the app, not changed later)
       allow create: if isAdmin()
-                    || (isSelf(uid) && request.resource.data.role == "admin");
+                    || (isSelf(uid) && request.resource.data.role in ["admin", "employee", "projectLead"]);
 
       // UPDATE
       // • Admin can update any field on any document
@@ -60,17 +63,48 @@ service cloud.firestore {
     // communities collection  (microcommunities)
     // -----------------------------------------------------------------------
     match /communities/{communityID} {
-      // Only admin can create, read, update, delete communities
-      allow read, write: if isAdmin();
+      // Admin can do anything; employees & project leads can READ (needed to list communities/tasks)
+      allow read: if isAuth();
+      allow create, update, delete: if isAdmin();
 
-      // Feed subcollection — community members + admin can read & create
+      // Feed subcollection — all authenticated users can read & create
       match /feed/{messageID} {
-        allow read, create: if isAdmin()
-                            || (isAuth() && resource == null)
-                            || isAuth();
+        allow read, create: if isAuth();
         // Only admin can delete messages
         allow delete: if isAdmin();
       }
+
+      // Tasks subcollection
+      //  • Project lead can create / update / delete tasks
+      //  • Employees can read tasks and update status on their own tasks
+      match /tasks/{taskID} {
+        allow read: if isAuth();
+        allow create, delete: if isAuth() && (isAdmin() || callerRole() == "projectLead");
+        allow update: if isAuth() && (
+                         isAdmin()
+                         || callerRole() == "projectLead"
+                         || (callerRole() == "employee" && resource.data.assignedToID == request.auth.uid)
+                       );
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // announcements collection
+    // -----------------------------------------------------------------------
+    match /announcements/{announcementID} {
+      // Admin & project leads can create announcements / task notifications
+      allow create: if isAuth() && (isAdmin() || callerRole() == "projectLead");
+
+      // Admin can read all; employees & project leads read only their own
+      // (targetUID == their UID, or no targetUID meaning it's a broadcast)
+      allow read: if isAdmin()
+                  || (isAuth() && (
+                        !("targetUID" in resource.data)
+                        || resource.data.targetUID == request.auth.uid
+                     ));
+
+      // Only admin can update or delete
+      allow update, delete: if isAdmin();
     }
 
     // -----------------------------------------------------------------------

@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import Combine
 import FirebaseFirestore
 import FirebaseAuth
 
@@ -123,18 +124,20 @@ class CheckInViewModel: ObservableObject {
     }
 
     // MARK: - Submit check-in
-    func submitCheckIn(uid: String, mood: CheckInMood, note: String) async {
+    func submitCheckIn(uid: String, mood: CheckInMood?, note: String) async {
         isSubmitting = true
         errorMessage = nil
         successMessage = nil
 
-        let data: [String: Any] = [
+        var data: [String: Any] = [
             "uid":       uid,
-            "mood":      mood.rawValue,
             "note":      note,
             "dateKey":   todayKey,
             "createdAt": Timestamp(date: Date())
         ]
+        if let mood = mood {
+            data["mood"] = mood.rawValue
+        }
 
         do {
             try await db.collection("checkIns").addDocument(data: data)

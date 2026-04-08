@@ -273,14 +273,6 @@ struct EmployeeDashboardView: View {
                              color: Color(hex: "#A78BFA")) {
                         showMyIssues = true
                     }
-
-                    divider()
-
-                    quickRow(icon: "bell",
-                             title: "Notifications",
-                             color: Color(hex: "#A78BFA")) {
-                        withAnimation { selectedTab = .inbox }
-                    }
                 }
             }
 
@@ -331,60 +323,8 @@ struct EmployeeDashboardView: View {
     // MARK: - PROFILE Tab
     // ====================================================================
     private var profileTab: some View {
-        VStack(spacing: 18) {
-            // Avatar card
-            DeskHiveCard {
-                VStack(spacing: 16) {
-                    ZStack {
-                        Circle()
-                            .fill(LinearGradient(
-                                gradient: Gradient(colors: [Color(hex: "#4ECDC4"), Color(hex: "#44A8B3")]),
-                                startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 72, height: 72)
-                        Text((appState.currentUser?.email.prefix(1) ?? "E").uppercased())
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
-                    }
-                    Text(appState.currentUser?.email ?? "")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.white)
-                    Text("Employee")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color(hex: "#4ECDC4"))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 4)
-                        .background(Color(hex: "#4ECDC4").opacity(0.12))
-                        .cornerRadius(8)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-            }
-
-            // Stats
-            HStack(spacing: 12) {
-                StatCard(title: "Check-ins",
-                         value: "\(checkInVM.recentCheckIns.count)",
-                         icon: "checkmark.circle.fill",
-                         color: Color(hex: "#4ECDC4"))
-                StatCard(title: "Streak",
-                         value: streakCount(),
-                         icon: "flame.fill",
-                         color: Color(hex: "#F5A623"))
-            }
-
-            // Account actions
-            sectionHeader("Account")
-            DeskHiveCard {
-                VStack(spacing: 0) {
-                    quickRow(icon: "rectangle.portrait.and.arrow.right",
-                             title: "Sign Out",
-                             color: Color(hex: "#E94560")) {
-                        authVM.signOut(appState: appState)
-                    }
-                }
-            }
-        }
-        .padding(.top, 4)
+        EmployeeProfileView()
+            .environmentObject(appState)
     }
 
     // ====================================================================
