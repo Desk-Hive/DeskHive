@@ -16,7 +16,7 @@ struct EmployeeProfileView: View {
     @State private var showSalary      = false
     @State private var showStatements  = false
 
-    var user: DeskHiveUser { appState.currentUser! }
+    var user: DeskHiveUser? { appState.currentUser }
 
     private let accent   = Color(hex: "#4ECDC4")
     private let accent2  = Color(hex: "#A78BFA")
@@ -24,6 +24,11 @@ struct EmployeeProfileView: View {
     private let gold     = Color(hex: "#F5A623")
 
     var body: some View {
+        guard user != nil else { return AnyView(EmptyView()) }
+        return AnyView(profileContent)
+    }
+
+    private var profileContent: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
                 Spacer().frame(height: 4)
@@ -53,7 +58,7 @@ struct EmployeeProfileView: View {
             .padding(.horizontal, 20)
         }
         .onAppear {
-            vm.load(user: user)
+            if let u = user { vm.load(user: u) }
             Task {
                 if let uid = appState.currentUser?.id {
                     await checkInVM.loadTodayStatus(uid: uid)
@@ -97,7 +102,7 @@ struct EmployeeProfileView: View {
                     }
 
                     HStack(spacing: 6) {
-                        Text(user.role.displayName)
+                        Text(user?.role.displayName ?? "")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(accent)
                             .padding(.horizontal, 10)
@@ -141,7 +146,8 @@ struct EmployeeProfileView: View {
 
                         Button(action: {
                             Task {
-                                await vm.saveProfile(uid: user.id, appState: appState)
+                                guard let uid = user?.id else { return }
+                                await vm.saveProfile(uid: uid, appState: appState)
                                 if vm.successMessage != nil { withAnimation { editMode = false } }
                             }
                         }) {
@@ -198,7 +204,7 @@ struct EmployeeProfileView: View {
 
                 Divider().background(Color.white.opacity(0.08))
 
-                profileRow(icon: "envelope.fill",  label: "Email",      value: user.email, editable: false, binding: .constant(""))
+                profileRow(icon: "envelope.fill",  label: "Email",      value: user?.email ?? "", editable: false, binding: .constant(""))
                 profileRow(icon: "phone.fill",      label: "Phone",      value: vm.phone,   editable: editMode, binding: $vm.phone)
                 profileRow(icon: "briefcase.fill",  label: "Job Title",  value: vm.jobTitle, editable: editMode, binding: $vm.jobTitle)
                 profileRow(icon: "building.2.fill", label: "Department", value: vm.department, editable: editMode, binding: $vm.department)
@@ -533,19 +539,20 @@ struct EmployeeProfileView: View {
 
     // MARK: - Computed helpers
     private var initials: String {
-        let name = vm.fullName.isEmpty ? user.email : vm.fullName
+        let name = vm.fullName.isEmpty ? (user?.email ?? "") : vm.fullName
         return name.components(separatedBy: " ")
             .prefix(2).compactMap { $0.first.map(String.init) }
             .joined().uppercased()
     }
 
     private var displayName: String {
-        vm.fullName.isEmpty ? user.email.components(separatedBy: "@").first?.capitalized ?? "Employee" : vm.fullName
+        vm.fullName.isEmpty ? user?.email.components(separatedBy: "@").first?.capitalized ?? "Employee" : vm.fullName
     }
 
     private var formattedJoinDate: String {
+        guard let createdAt = user?.createdAt else { return "" }
         let f = DateFormatter(); f.dateFormat = "MMMM yyyy"
-        return f.string(from: user.createdAt)
+        return f.string(from: createdAt)
     }
 
     private var formattedSalary: String { formatted(vm.salary) }
