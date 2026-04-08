@@ -8,13 +8,13 @@ import FirebaseFirestore
 
 enum UserRole: String, Codable {
     case admin = "admin"
-    case employee = "employee"
+    case member = "member"
     case projectLead = "projectLead"
 
     var displayName: String {
         switch self {
-        case .admin:       return "Admin"
-        case .employee:    return "Employee"
+        case .admin: return "Admin"
+        case .member: return "Member"
         case .projectLead: return "Project Lead"
         }
     }
@@ -34,7 +34,6 @@ struct DeskHiveUser: Identifiable, Codable {
     }
 
     init?(id: String, data: [String: Any]) {
-        // Firestore decoding is intentionally strict to avoid routing users with malformed roles.
         guard
             let email = data["email"] as? String,
             let roleRaw = data["role"] as? String,
@@ -48,13 +47,11 @@ struct DeskHiveUser: Identifiable, Codable {
         if let ts = data["createdAt"] as? Timestamp {
             self.createdAt = ts.dateValue()
         } else {
-            // Fall back for older/migrated docs that predate createdAt.
             self.createdAt = Date()
         }
     }
 
     var firestoreData: [String: Any] {
-        // Keep Firestore keys centralized to avoid drift between auth flows.
         [
             "email": email,
             "role": role.rawValue,
