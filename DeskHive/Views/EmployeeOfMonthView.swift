@@ -5,7 +5,13 @@
 
 import SwiftUI
 
+// Shared Employee of the Month UI.
+// This file contains the reusable spotlight card shown on dashboards, the empty
+// state shown when no winner exists yet, and the admin-only sheet for selecting
+// or replacing the current month's winner.
+
 // MARK: - Shared spotlight card shown on ALL dashboards
+// Read-only presentation of the currently selected winner.
 struct EmployeeOfMonthCard: View {
     let award: EmployeeOfMonth
     var isHighlighted: Bool = false   // true when the viewer IS the winner
@@ -147,6 +153,7 @@ struct EmployeeOfMonthCard: View {
 }
 
 // MARK: - Empty state card (no winner yet this month)
+// Fallback card used anywhere the shared spotlight appears before an award is saved.
 struct EmployeeOfMonthEmptyCard: View {
     var body: some View {
         HStack(spacing: 16) {
@@ -182,17 +189,21 @@ struct EmployeeOfMonthEmptyCard: View {
 }
 
 // MARK: - Admin picker sheet
+// Admin-only flow for reviewing the current winner, searching eligible members,
+// entering a reason, and confirming the write through the view model.
 struct AdminEmployeeOfMonthView: View {
     @ObservedObject var vm: EmployeeOfMonthViewModel
     let members: [DeskHiveUser]
     let adminEmail: String
     @Environment(\.dismiss) var dismiss
 
+    // Local selection state for the in-progress award action.
     @State private var selectedEmployee: DeskHiveUser? = nil
     @State private var reason = ""
     @State private var showConfirm = false
     @State private var searchText = ""
 
+    // Restrict the picker to employees/project leads, then apply the email search.
     private var employees: [DeskHiveUser] {
         let filtered = members.filter { $0.role == .employee || $0.role == .projectLead }
         if searchText.isEmpty { return filtered }
@@ -377,6 +388,7 @@ struct AdminEmployeeOfMonthView: View {
         }
     }
 
+    // Reusable selectable row for the candidate list in the admin picker.
     private func employeeRow(_ emp: DeskHiveUser) -> some View {
         let isSelected = selectedEmployee?.id == emp.id
         return Button(action: {
@@ -448,6 +460,7 @@ struct AdminEmployeeOfMonthView: View {
         .animation(.easeInOut(duration: 0.15), value: isSelected)
     }
 
+    // Small section heading helper to keep the sheet layout consistent.
     private func sectionLabel(_ text: String) -> some View {
         HStack {
             Text(text)
@@ -459,6 +472,7 @@ struct AdminEmployeeOfMonthView: View {
 }
 
 // MARK: - Compact history row (used in admin view)
+// Lightweight row for a past winner when history is shown in a list.
 struct EmployeeOfMonthHistoryRow: View {
     let award: EmployeeOfMonth
     var body: some View {

@@ -6,7 +6,11 @@
 import Foundation
 import FirebaseFirestore
 
+// Represents one Employee of the Month record stored in Firestore.
+// The model keeps the persisted fields, exposes view-friendly derived values,
+// and centralizes month/document formatting so every screen uses the same keys.
 struct EmployeeOfMonth: Identifiable {
+    // Raw fields persisted under the `employeeOfMonth` collection.
     var id: String          // Firestore doc ID (e.g. "2026-02")
     var employeeID: String
     var employeeEmail: String
@@ -15,6 +19,7 @@ struct EmployeeOfMonth: Identifiable {
     var awardedAt: Date
     var awardedByEmail: String
 
+    // Derived values used by the UI so cards do not repeat string parsing logic.
     // Derived: initials for avatar
     var initials: String {
         let name = employeeEmail.components(separatedBy: "@").first ?? "?"
@@ -31,6 +36,7 @@ struct EmployeeOfMonth: Identifiable {
         return name.replacingOccurrences(of: ".", with: " ").capitalized
     }
 
+    // Used when the app creates a new monthly winner before writing it to Firestore.
     init(id: String, employeeID: String, employeeEmail: String,
          reason: String, month: String, awardedAt: Date, awardedByEmail: String) {
         self.id             = id
@@ -42,6 +48,7 @@ struct EmployeeOfMonth: Identifiable {
         self.awardedByEmail = awardedByEmail
     }
 
+    // Used when hydrating the model from a Firestore document snapshot.
     init?(id: String, data: [String: Any]) {
         guard
             let employeeID    = data["employeeID"]    as? String,
@@ -65,6 +72,7 @@ struct EmployeeOfMonth: Identifiable {
         }
     }
 
+    // Canonical payload written back to Firestore by the feature view model.
     var firestoreData: [String: Any] {
         [
             "employeeID":     employeeID,
@@ -76,6 +84,7 @@ struct EmployeeOfMonth: Identifiable {
         ]
     }
 
+    // Helpers below ensure reads and writes agree on the current month's document ID.
     /// Document ID format: "YYYY-MM"
     static func docID(for date: Date = Date()) -> String {
         let f = DateFormatter()

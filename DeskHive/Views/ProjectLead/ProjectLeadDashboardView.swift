@@ -6,11 +6,16 @@
 import SwiftUI
 import FirebaseFirestore
 
+// Project lead landing screen.
+// For Employee of the Month, this dashboard behaves like the employee dashboard:
+// it listens to the shared current-month award and renders the same spotlight card
+// on the home tab, with highlight state if the lead is the selected winner.
 struct ProjectLeadDashboardView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var authVM   = AuthViewModel()
     @StateObject private var issueVM  = IssueReportViewModel()
     @StateObject private var annVM    = AnnouncementViewModel()
+    // Read-only listener for the shared monthly winner document.
     @StateObject private var eomVM    = EmployeeOfMonthViewModel()
 
     @State private var selectedTab: PLTab = .home
@@ -100,6 +105,8 @@ struct ProjectLeadDashboardView: View {
                 )
             }
         }
+        // The project lead dashboard combines its own inbox/community loading with a
+        // live subscription to the Employee of the Month document for the home card.
         .task {
             await fetchMyCommunity()
             if let uid = appState.currentUser?.id {
@@ -108,6 +115,7 @@ struct ProjectLeadDashboardView: View {
             annVM.startListening()
             eomVM.startListening()
         }
+        // Stop both listeners when the dashboard disappears.
         .onDisappear {
             annVM.stopListening()
             eomVM.stopListening()
@@ -204,6 +212,7 @@ struct ProjectLeadDashboardView: View {
             }
 
             // ── Employee of the Month ────────────────────────────────────
+            // Reuse the shared award card, highlighting the lead when they are the winner.
             if let award = eomVM.current {
                 EmployeeOfMonthCard(
                     award: award,
