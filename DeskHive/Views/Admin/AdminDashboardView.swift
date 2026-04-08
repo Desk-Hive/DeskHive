@@ -5,15 +5,21 @@
 
 import SwiftUI
 
+// Admin landing screen.
+// For Employee of the Month, this dashboard hosts the admin management entry point,
+// keeps a live listener for the current month's winner, and renders the shared
+// spotlight card/empty state on the home tab.
 struct AdminDashboardView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var adminVM = AdminViewModel()
     @StateObject private var authVM = AuthViewModel()
     @StateObject private var communityVM = CommunityViewModel()
+    // Dedicated feature view model so admin actions and the home card stay in sync.
     @StateObject private var eomVM = EmployeeOfMonthViewModel()
 
     @State private var selectedTab: AdminTab = .home
     @State private var showNews: Bool = false
+    // Controls the admin sheet used to select or change the monthly winner.
     @State private var showEOM: Bool = false
 
     enum AdminTab {
@@ -92,6 +98,7 @@ struct AdminDashboardView: View {
         .sheet(isPresented: $showNews) {
             TechNewsView()
         }
+        // Opens the feature's admin management sheet with the current member list.
         .sheet(isPresented: $showEOM) {
             AdminEmployeeOfMonthView(
                 vm: eomVM,
@@ -99,11 +106,14 @@ struct AdminDashboardView: View {
                 adminEmail: appState.currentUser?.email ?? ""
             )
         }
+        // Load supporting dashboard data, then start listening for this month's award
+        // so the home card updates immediately after any admin save/clear action.
         .task {
             await adminVM.fetchMembers()
             await communityVM.fetchCommunities()
             eomVM.startListening()
         }
+        // Prevent the Firestore listener from staying alive after this dashboard leaves screen.
         .onDisappear { eomVM.stopListening() }
     }
 
@@ -200,6 +210,7 @@ struct AdminDashboardView: View {
                         }
                     }
                 }
+                // Read-only preview of the current monthly winner.
                 if let award = eomVM.current {
                     EmployeeOfMonthCard(award: award)
                 } else {

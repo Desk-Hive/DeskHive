@@ -6,9 +6,13 @@
 import Foundation
 import FirebaseFirestore
 
+// Owns all Employee of the Month data flow.
+// It listens to the current month's document in real time, loads recent history,
+// and handles the admin write/delete actions that update Firestore.
 @MainActor
 final class EmployeeOfMonthViewModel: ObservableObject {
 
+    // UI-facing state shared by the admin picker sheet and dashboard spotlight cards.
     @Published var current: EmployeeOfMonth? = nil
     @Published var history: [EmployeeOfMonth] = []
     @Published var isLoading   = false
@@ -16,9 +20,13 @@ final class EmployeeOfMonthViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     @Published var successMessage: String? = nil
 
+    // Firestore connection details for the single `employeeOfMonth` collection.
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
 
+    // Subscribes to the document for the current month only.
+    // Because the document ID is based on `yyyy-MM`, any save for this month
+    // updates the same record and all listening dashboards refresh automatically.
     // MARK: - Real-time listener for the current month's award
     func startListening() {
         let docID = EmployeeOfMonth.docID()
@@ -34,11 +42,13 @@ final class EmployeeOfMonthViewModel: ObservableObject {
             }
     }
 
+    // Called when the hosting screen disappears so the snapshot listener is cleaned up.
     func stopListening() {
         listener?.remove()
         listener = nil
     }
 
+    // Loads a short newest-first history list for admin review screens.
     // MARK: - Fetch history (last 6 months)
     func fetchHistory() async {
         isLoading = true
@@ -54,6 +64,9 @@ final class EmployeeOfMonthViewModel: ObservableObject {
         isLoading = false
     }
 
+    // Writes or replaces the current month's winner document.
+    // The rest of the app reads the same monthly document, so one successful save
+    // is enough to update admin, employee, and project-lead dashboards.
     // MARK: - Admin: save award
     func saveAward(employee: DeskHiveUser, reason: String, adminEmail: String) async {
         guard !reason.trimmingCharacters(in: .whitespaces).isEmpty else {
@@ -89,6 +102,7 @@ final class EmployeeOfMonthViewModel: ObservableObject {
         isSaving = false
     }
 
+    // Removes only this month's winner document and clears the local current state.
     // MARK: - Admin: clear current award
     func clearAward() async {
         let docID = EmployeeOfMonth.docID()

@@ -5,10 +5,14 @@
 
 import SwiftUI
 
+// Employee landing screen.
+// For the Employee of the Month feature, this dashboard listens for the current
+// month's shared award and shows the reusable spotlight card on the home tab.
 struct EmployeeDashboardView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var authVM    = AuthViewModel()
     @StateObject private var checkInVM = CheckInViewModel()
+    // Shared feature view model used only for the read-only monthly spotlight.
     @StateObject private var eomVM     = EmployeeOfMonthViewModel()
 
     @State private var selectedTab: EmployeeTab = .home
@@ -96,6 +100,8 @@ struct EmployeeDashboardView: View {
         .sheet(isPresented: $showNews) {
             TechNewsView()
         }
+        // Start listening once the dashboard appears so employees see award changes
+        // without manually refreshing the screen.
         .task {
             if let uid = appState.currentUser?.id {
                 await checkInVM.loadTodayStatus(uid: uid)
@@ -103,6 +109,7 @@ struct EmployeeDashboardView: View {
             }
             eomVM.startListening()
         }
+        // Tear down the listener with the screen lifecycle.
         .onDisappear { eomVM.stopListening() }
     }
 
@@ -215,6 +222,7 @@ struct EmployeeDashboardView: View {
             }
 
             // ── Employee of the Month ────────────────────────────────────
+            // Reuse the shared award card, highlighting the employee when they are the winner.
             if let award = eomVM.current {
                 EmployeeOfMonthCard(
                     award: award,
