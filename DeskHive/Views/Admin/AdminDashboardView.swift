@@ -2,20 +2,32 @@
 //  AdminDashboardView.swift
 //  DeskHive
 //
+//  Root view for the admin role. Hosts a horizontal tab bar that switches
+//  between five sections: Home overview, Employees list, Microcommunities,
+//  Announcements, and Issue Reports. All child view-models are owned here
+//  so that data is shared across tabs without extra fetches.
+//
 
 import SwiftUI
 
 struct AdminDashboardView: View {
+    // Shared app-wide state (current user, auth status, etc.)
     @EnvironmentObject var appState: AppState
+
+    // View-models are owned at this level so data persists while switching tabs
     @StateObject private var adminVM = AdminViewModel()
     @StateObject private var authVM = AuthViewModel()
     @StateObject private var communityVM = CommunityViewModel()
     @StateObject private var eomVM = EmployeeOfMonthViewModel()
 
+    // Controls which tab is currently visible
     @State private var selectedTab: AdminTab = .home
-    @State private var showNews: Bool = false
-    @State private var showEOM: Bool = false
 
+    // Sheet presentation flags
+    @State private var showNews: Bool = false  // Tech news full-screen sheet
+    @State private var showEOM: Bool = false   // Employee of the Month picker sheet
+
+    /// Identifies each section in the admin navigation bar.
     enum AdminTab {
         case home, employees, communities, announcements, issues
     }
@@ -100,17 +112,22 @@ struct AdminDashboardView: View {
             )
         }
         .task {
+            // Pre-load members and communities on first appearance;
+            // EOM listener streams real-time updates via Firestore.
             await adminVM.fetchMembers()
             await communityVM.fetchCommunities()
             eomVM.startListening()
         }
-        .onDisappear { eomVM.stopListening() }
+        .onDisappear { eomVM.stopListening() }  // Release Firestore listener to avoid leaks
     }
 
     // MARK: - Home Tab
+    /// Summary overview shown when the admin first opens the dashboard.
+    /// Displays at-a-glance stats, quick-action shortcuts, the current
+    /// Employee of the Month spotlight, and a tech-news preview.
     var homeContent: some View {
         VStack(spacing: 20) {
-            // Stats cards
+            // Stats cards — counts derived live from fetched Firestore data
             HStack(spacing: 16) {
                 StatCard(
                     title: "Total Employees",
@@ -219,9 +236,12 @@ struct AdminDashboardView: View {
     }
 
     // MARK: - Employees Tab (read-only)
+    /// Lists every registered user fetched from Firestore.
+    /// The admin can view member details but cannot edit them from this tab;
+    /// adding a new member is handled separately via AddMemberSheet.
     var employeesContent: some View {
         VStack(spacing: 16) {
-            // Header
+            // Header — shows total member count as a subtitle
             HStack {
                 Text("All Employees")
                     .font(.system(size: 20, weight: .bold, design: .rounded))
@@ -264,6 +284,8 @@ struct AdminDashboardView: View {
 
 // MARK: - Supporting Views
 
+/// A single pill-shaped button used in the admin's horizontal tab bar.
+/// Highlights with a frosted-glass background when `selected` is true.
 struct TabButton: View {
     let title: String
     let icon: String
@@ -286,6 +308,8 @@ struct TabButton: View {
     }
 }
 
+/// Displays a single numeric metric (e.g. total employees) with a tinted icon.
+/// Used in the Home tab's top statistics row.
 struct StatCard: View {
     let title: String
     let value: String
@@ -315,6 +339,8 @@ struct StatCard: View {
     }
 }
 
+/// A tappable card in the Home tab's "Quick Actions" section.
+/// Navigates to the corresponding tab or presents a modal sheet on tap.
 struct ActionCard: View {
     let title: String
     let subtitle: String
@@ -354,14 +380,17 @@ struct ActionCard: View {
     }
 }
 
+/// A single row in the Employees tab for one registered user.
+/// The avatar is a coloured circle whose tint reflects the member's role.
 struct EmployeeRow: View {
     let member: DeskHiveUser
 
+    /// Returns the tint colour that corresponds to the member's role.
     var roleColor: Color {
         switch member.role {
-        case .employee:    return Color(hex: "#4ECDC4")
-        case .projectLead: return Color(hex: "#F5A623")
-        case .admin:       return Color(hex: "#E94560")
+        case .employee:    return Color(hex: "#4ECDC4")  // Teal for standard employees
+        case .projectLead: return Color(hex: "#F5A623")  // Amber for project leads
+        case .admin:       return Color(hex: "#E94560")  // Red for admins
         }
     }
 
@@ -411,6 +440,8 @@ struct EmployeeRow: View {
     }
 }
 
+/// Small pill badge that labels a user's role (Admin / Project Lead / Employee)
+/// with a matching background tint for quick visual scanning.
 struct RoleBadge: View {
     let role: UserRole
 
@@ -433,6 +464,8 @@ struct RoleBadge: View {
     }
 }
 
+/// Generic empty-state placeholder shown when a list has no data to display.
+/// Accepts a SF Symbol name, a heading, and a short instructional subtitle.
 struct EmptyStateView: View {
     let icon: String
     let title: String
