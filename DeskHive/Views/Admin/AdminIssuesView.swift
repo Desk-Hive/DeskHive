@@ -2,18 +2,25 @@
 //  AdminIssuesView.swift
 //  DeskHive
 //
-//  Admin view to browse, filter and respond to anonymous issue reports.
+//  Admin view for browsing, filtering, and responding to anonymous issue reports.
+//  Reports are submitted by employees and stored in Firestore. The admin can
+//  update the status (Open → In Review → Resolved) and attach a written response
+//  that the reporting employee will see on their end.
 //
 
 import SwiftUI
 
 struct AdminIssuesView: View {
+    // Shared view-model passed down from AdminDashboardView
     @ObservedObject var adminVM: AdminViewModel
 
-    @State private var filterStatus: IssueStatus? = nil          // nil = show all
+    /// Currently selected status filter; `nil` means show all reports.
+    @State private var filterStatus: IssueStatus? = nil
+    /// Non-nil value opens the IssueResponseSheet for that report.
     @State private var selectedIssue: IssueReport? = nil
 
-    // Filtered list based on current tab
+    /// Returns the subset of issues matching the active filter chip,
+    /// or the full list when no filter is applied.
     private var filteredIssues: [IssueReport] {
         guard let f = filterStatus else { return adminVM.issues }
         return adminVM.issues.filter { $0.status == f }
@@ -23,6 +30,8 @@ struct AdminIssuesView: View {
         VStack(spacing: 16) {
 
             // ── Filter chips ─────────────────────────────────────────────
+            // Horizontal row of pill buttons; tapping one narrows the list
+            // to that status. "All" resets the filter to show every report.
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     FilterChip(label: "All", icon: "tray.full", active: filterStatus == nil) {
@@ -48,11 +57,14 @@ struct AdminIssuesView: View {
             }
 
             // ── Error banner ─────────────────────────────────────────────
+            // Displayed if the Firestore fetch or an update operation fails
             if let err = adminVM.issuesError {
                 ErrorBanner(message: err).padding(.horizontal, 24)
             }
 
             // ── List ─────────────────────────────────────────────────────
+            // Shows a spinner while loading, an empty state when the filtered
+            // list is empty, or the full card list when data is available.
             if adminVM.isLoadingIssues {
                 Spacer()
                 ProgressView()
@@ -85,6 +97,7 @@ struct AdminIssuesView: View {
             IssueResponseSheet(issue: issue, adminVM: adminVM)
         }
         .task {
+            // Fetch all issue reports when the tab first becomes visible
             await adminVM.fetchIssues()
         }
     }
@@ -92,6 +105,9 @@ struct AdminIssuesView: View {
 
 // MARK: - Single issue row (admin list)
 
+/// A tappable card that summarises one anonymous issue report.
+/// Displays the case ID, status badge, category, title, description preview,
+/// submission date, and a "Responded" indicator when the admin has already replied.
 private struct IssueAdminRow: View {
     let issue: IssueReport
     let onTap: () -> Void
@@ -100,7 +116,7 @@ private struct IssueAdminRow: View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 10) {
 
-                // Top: Case ID + status badge
+                // Top: Case ID (monospaced for quick scanning) + coloured status badge
                 HStack {
                     Text(issue.id)
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
@@ -124,7 +140,7 @@ private struct IssueAdminRow: View {
                         .stroke(Color(hex: issue.status.color).opacity(0.4), lineWidth: 1))
                 }
 
-                // Category chip
+                // Category chip — coloured icon + label (e.g. "Workplace", "IT")
                 HStack(spacing: 5) {
                     Image(systemName: issue.category.icon)
                         .font(.system(size: 11))
@@ -139,13 +155,13 @@ private struct IssueAdminRow: View {
                     .foregroundColor(.white)
                     .lineLimit(1)
 
-                // Description preview
+                // Description preview — truncated to 2 lines for compact display
                 Text(issue.description)
                     .font(.system(size: 12))
                     .foregroundColor(.white.opacity(0.55))
                     .lineLimit(2)
 
-                // Date + response indicator
+                // Footer: relative submission date and optional "Responded" pill
                 HStack {
                     Image(systemName: "calendar")
                         .font(.system(size: 11))
@@ -184,14 +200,20 @@ private struct IssueAdminRow: View {
 
 // MARK: - Response sheet
 
+/// Full-screen detail sheet where the admin reads the full issue report,
+/// updates its status (Open / In Review / Resolved), and writes a response
+/// that will be visible to the employee who submitted the report.
+/// Initial values are pre-populated from the existing issue data.
 struct IssueResponseSheet: View {
     let issue: IssueReport
     @ObservedObject var adminVM: AdminViewModel
     @Environment(\.dismiss) var dismiss
 
-    @State private var responseText: String
-    @State private var selectedStatus: IssueStatus
+    @State private var responseText: String   // Pre-filled with any existing admin response
+    @State private var selectedStatus: IssueStatus  // Pre-filled with current issue status
 
+    /// Seeds the editable state from the issue passed in so the form
+    /// always reflects the latest persisted values when opened.
     init(issue: IssueReport, adminVM: AdminViewModel) {
         self.issue = issue
         self.adminVM = adminVM
@@ -207,7 +229,7 @@ struct IssueResponseSheet: View {
                 VStack(spacing: 24) {
                     Spacer().frame(height: 20)
 
-                    // Header
+                    // Header — icon, "Issue Details" title, and case ID
                     VStack(spacing: 8) {
                         ZStack {
                             Circle()
@@ -225,7 +247,7 @@ struct IssueResponseSheet: View {
                             .foregroundColor(.white.opacity(0.4))
                     }
 
-                    // Issue summary card
+                    // Issue summary — read-only card showing category, status, title, and full description
                     DeskHiveCard {
                         VStack(alignment: .leading, spacing: 12) {
 
@@ -264,7 +286,8 @@ struct IssueResponseSheet: View {
                         }
                     }
 
-                    // Status picker
+                    // Status picker — tapping a pill updates `selectedStatus` locally;
+                    // the change is persisted to Firestore when "Send Response" is tapped.
                     DeskHiveCard {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Update Status")
@@ -293,7 +316,7 @@ struct IssueResponseSheet: View {
                         }
                     }
 
-                    // Response input
+                    // Response text field — multiline, grows up to 10 lines
                     DeskHiveCard {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Admin Response")
@@ -313,12 +336,12 @@ struct IssueResponseSheet: View {
                         }
                     }
 
-                    // Error
+                    // Inline error banner if the submit call fails
                     if let err = adminVM.issuesError {
                         ErrorBanner(message: err)
                     }
 
-                    // Submit button
+                    // Submit button — persists status + response to Firestore, then dismisses
                     Button(action: {
                         Task {
                             await adminVM.respondToIssue(
@@ -383,10 +406,12 @@ struct IssueResponseSheet: View {
 
 // MARK: - Filter chip helper
 
+/// A small pill-shaped toggle button used in the horizontal filter bar.
+/// Highlighted in `color` when `active` is true; muted white otherwise.
 private struct FilterChip: View {
     let label: String
     let icon: String
-    var color: Color = .white
+    var color: Color = .white  // Defaults to white for the "All" chip
     let active: Bool
     let action: () -> Void
 
