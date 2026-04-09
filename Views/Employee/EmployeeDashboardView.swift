@@ -21,6 +21,7 @@ struct EmployeeDashboardView: View {
     @State private var showMyIssues    = false
     @State private var showNews        = false
     @State private var showAIChat      = false
+    @State private var isRefreshingQuote = false
     @State private var currentMoodQuote = MoodQuoteItem(
         mood: "default",
         quote: "Start where you are. Improve one thing today.",
@@ -379,36 +380,103 @@ struct EmployeeDashboardView: View {
     }
 
     private var moodQuoteCard: some View {
-        HStack(alignment: .top, spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(moodAccentColor.opacity(0.16))
-                    .frame(width: 42, height: 42)
-                Image(systemName: "quote.bubble.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(moodAccentColor)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(moodAccentColor.opacity(0.18))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "quote.bubble.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(moodAccentColor)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Daily Motivation")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.95))
+                    Text("A quote matched to your check-in mood")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.white.opacity(0.55))
+                }
+
+                Spacer()
+
+                Text(moodBadgeText)
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.9))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(moodAccentColor.opacity(0.22))
+                    .overlay(
+                        Capsule().stroke(moodAccentColor.opacity(0.35), lineWidth: 1)
+                    )
+                    .clipShape(Capsule())
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Today's Motivation")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundColor(moodAccentColor)
-                Text("\"\(currentMoodQuote.quote)\"")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white.opacity(0.85))
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("- \(currentMoodQuote.author)")
-                    .font(.system(size: 11))
-                    .foregroundColor(.white.opacity(0.45))
-            }
+            Text("\"\(currentMoodQuote.quote)\"")
+                .font(.system(size: 17, weight: .semibold, design: .serif))
+                .foregroundColor(.white.opacity(0.92))
+                .lineSpacing(4)
+                .fixedSize(horizontal: false, vertical: true)
 
-            Spacer()
+            HStack {
+                Label(currentMoodQuote.author, systemImage: "person.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.62))
+
+                Spacer()
+
+                Button {
+                    Task { @MainActor in
+                        isRefreshingQuote = true
+                        await updateMoodQuote()
+                        isRefreshingQuote = false
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: isRefreshingQuote ? "hourglass" : "arrow.clockwise")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text(isRefreshingQuote ? "Loading" : "Refresh")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(.white.opacity(0.82))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(isRefreshingQuote)
+            }
         }
-        .padding(14)
-        .background(Color.white.opacity(0.08))
-        .cornerRadius(14)
-        .overlay(RoundedRectangle(cornerRadius: 14)
-            .stroke(moodAccentColor.opacity(0.35), lineWidth: 1))
+        .padding(16)
+        .background(
+            ZStack(alignment: .topTrailing) {
+                LinearGradient(
+                    colors: [Color.white.opacity(0.06), moodAccentColor.opacity(0.2)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                Circle()
+                    .fill(moodAccentColor.opacity(0.2))
+                    .frame(width: 120, height: 120)
+                    .blur(radius: 8)
+                    .offset(x: 40, y: -50)
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(moodAccentColor.opacity(0.38), lineWidth: 1)
+        )
+        .shadow(color: moodAccentColor.opacity(0.18), radius: 12, x: 0, y: 6)
+    }
+
+    private var moodBadgeText: String {
+        guard let mood = checkInVM.todayMood else { return "Default" }
+        return mood.rawValue.capitalized
     }
 
     // ====================================================================
