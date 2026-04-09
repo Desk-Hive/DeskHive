@@ -20,6 +20,20 @@ struct EmployeeCommunitiesView: View {
         communityVM.communities.filter { $0.memberIDs.contains(employeeID) }
     }
 
+    private func projectLeadName(for community: Microcommunity) -> String {
+        if !community.projectLeadEmail.isEmpty {
+            return community.projectLeadEmail.components(separatedBy: "@").first?.capitalized ?? community.projectLeadEmail
+        }
+
+        if let idx = community.memberIDs.firstIndex(of: community.projectLeadID),
+           idx < community.memberEmails.count {
+            let email = community.memberEmails[idx]
+            return email.components(separatedBy: "@").first?.capitalized ?? email
+        }
+
+        return "Not assigned"
+    }
+
     var body: some View {
         VStack(spacing: 20) {
 
@@ -89,15 +103,13 @@ struct EmployeeCommunitiesView: View {
                                             .font(.system(size: 11, weight: .medium))
                                             .foregroundColor(Color(hex: "#F5A623"))
                                     }
-                                    if !community.projectLeadEmail.isEmpty {
-                                        HStack(spacing: 3) {
-                                            Image(systemName: "crown.fill")
-                                                .font(.system(size: 9))
-                                            Text("Lead: \(community.projectLeadEmail.components(separatedBy: "@").first ?? community.projectLeadEmail)")
-                                                .font(.system(size: 10, weight: .medium))
-                                        }
-                                        .foregroundColor(Color(hex: "#F5A623"))
+                                    HStack(spacing: 3) {
+                                        Image(systemName: "crown.fill")
+                                            .font(.system(size: 9))
+                                        Text("Project Lead: \(projectLeadName(for: community))")
+                                            .font(.system(size: 10, weight: .medium))
                                     }
+                                    .foregroundColor(Color(hex: "#F5A623"))
                                     Text("\(community.memberIDs.count) member\(community.memberIDs.count == 1 ? "" : "s")")
                                         .font(.system(size: 11))
                                         .foregroundColor(.white.opacity(0.4))

@@ -21,6 +21,11 @@ struct EmployeeDashboardView: View {
     @State private var showMyIssues    = false
     @State private var showNews        = false
     @State private var showAIChat      = false
+    @State private var currentMoodQuote = MoodQuoteItem(
+        mood: "default",
+        quote: "Start where you are. Improve one thing today.",
+        author: "DeskHive"
+    )
     @StateObject private var issueVM  = IssueReportViewModel()
 
     enum EmployeeTab { case home, communities, work, inbox, profile }
@@ -147,6 +152,7 @@ struct EmployeeDashboardView: View {
                 if let uid = appState.currentUser?.id {
                     await checkInVM.loadTodayStatus(uid: uid)
                     await checkInVM.loadRecentCheckIns(uid: uid)
+                    await updateMoodQuote()
                 }
             }
         }) {
@@ -175,8 +181,14 @@ struct EmployeeDashboardView: View {
             if let uid = appState.currentUser?.id {
                 await checkInVM.loadTodayStatus(uid: uid)
                 await checkInVM.loadRecentCheckIns(uid: uid)
+                await updateMoodQuote()
             }
             eomVM.startListening()
+        }
+        .onChange(of: checkInVM.todayMood?.rawValue) { _ in
+            Task {
+                await updateMoodQuote()
+            }
         }
         // Tear down the listener with the screen lifecycle.
         .onDisappear { eomVM.stopListening() }
@@ -231,6 +243,9 @@ struct EmployeeDashboardView: View {
     // ====================================================================
     private var homeTab: some View {
         VStack(spacing: 18) {
+
+            // ── Mood Quote ──────────────────────────────────────────────
+            moodQuoteCard
 
             // ── Daily Check-in card ──────────────────────────────────────
             Button(action: { showCheckIn = true }) {
@@ -361,6 +376,39 @@ struct EmployeeDashboardView: View {
 
         }
         .padding(.top, 4)
+    }
+
+    private var moodQuoteCard: some View {
+        HStack(alignment: .top, spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(moodAccentColor.opacity(0.16))
+                    .frame(width: 42, height: 42)
+                Image(systemName: "quote.bubble.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(moodAccentColor)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Today's Motivation")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundColor(moodAccentColor)
+                Text("\"\(currentMoodQuote.quote)\"")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white.opacity(0.85))
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("- \(currentMoodQuote.author)")
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.45))
+            }
+
+            Spacer()
+        }
+        .padding(14)
+        .background(Color.white.opacity(0.08))
+        .cornerRadius(14)
+        .overlay(RoundedRectangle(cornerRadius: 14)
+            .stroke(moodAccentColor.opacity(0.35), lineWidth: 1))
     }
 
     // ====================================================================
@@ -501,6 +549,11 @@ struct EmployeeDashboardView: View {
             } else { break }
         }
         return "\(streak)"
+    }
+
+    @MainActor
+    private func updateMoodQuote() async {
+        currentMoodQuote = await MoodQuoteProvider.shared.fetchQuote(for: checkInVM.todayMood)
     }
 }
 
