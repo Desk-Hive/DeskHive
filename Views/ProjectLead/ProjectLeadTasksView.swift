@@ -398,7 +398,7 @@ struct CreateTaskSheet: View {
                                 if members.isEmpty {
                                     HStack(spacing: 8) {
                                         Image(systemName: "person.slash").foregroundColor(.white.opacity(0.3))
-                                        Text("No members in this community yet.")
+                                        Text("No members in this micro community yet.")
                                             .font(.system(size: 13))
                                             .foregroundColor(.white.opacity(0.4))
                                     }

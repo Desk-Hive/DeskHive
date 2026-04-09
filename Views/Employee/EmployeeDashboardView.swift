@@ -25,9 +25,23 @@ struct EmployeeDashboardView: View {
 
     enum EmployeeTab { case home, communities, work, inbox, profile }
 
+    private var moodAccentColor: Color {
+        if let mood = checkInVM.todayMood {
+            return Color(hex: mood.themeAccent)
+        }
+        return Color(hex: "#4ECDC4")
+    }
+
+    private var moodBackgroundColors: [Color] {
+        if let mood = checkInVM.todayMood {
+            return mood.themeGradient.map { Color(hex: $0) }
+        }
+        return [Color(hex: "#1A1A2E"), Color(hex: "#16213E"), Color(hex: "#0F3460")]
+    }
+
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppBackground().ignoresSafeArea()
+            AppBackground(colors: moodBackgroundColors).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // ── Top Bar ──────────────────────────────────────────────
@@ -55,7 +69,7 @@ struct EmployeeDashboardView: View {
                     HStack(spacing: 6) {
                         Circle()
                             .fill(checkInVM.hasCheckedInToday
-                                  ? Color(hex: "#4ECDC4") : Color(hex: "#E94560"))
+                                  ? moodAccentColor : Color(hex: "#E94560"))
                             .frame(width: 8, height: 8)
                         Text(checkInVM.hasCheckedInToday ? "Checked In" : "Not Checked In")
                             .font(.system(size: 11, weight: .semibold))
@@ -174,7 +188,7 @@ struct EmployeeDashboardView: View {
     private var bottomTabBar: some View {
         HStack(spacing: 0) {
             tabBarItem(icon: "house.fill",                label: "Home",        tab: .home)
-            tabBarItem(icon: "person.3.sequence.fill",    label: "Communities", tab: .communities)
+            tabBarItem(icon: "person.3.sequence.fill",    label: "Micro Communities", tab: .communities)
             tabBarItem(icon: "checklist",                 label: "My Work",     tab: .work)
             tabBarItem(icon: "bell.badge.fill",           label: "Inbox",       tab: .inbox)
             tabBarItem(icon: "person.crop.circle",        label: "Profile",     tab: .profile)
@@ -201,11 +215,11 @@ struct EmployeeDashboardView: View {
             VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 20, weight: active ? .semibold : .regular))
-                    .foregroundColor(active ? Color(hex: "#4ECDC4") : .white.opacity(0.35))
+                    .foregroundColor(active ? moodAccentColor : .white.opacity(0.35))
                     .scaleEffect(active ? 1.1 : 1.0)
                 Text(label)
                     .font(.system(size: 10, weight: active ? .semibold : .regular))
-                    .foregroundColor(active ? Color(hex: "#4ECDC4") : .white.opacity(0.35))
+                    .foregroundColor(active ? moodAccentColor : .white.opacity(0.35))
             }
             .frame(maxWidth: .infinity)
         }
@@ -224,7 +238,7 @@ struct EmployeeDashboardView: View {
                     ZStack {
                         Circle()
                             .fill(checkInVM.hasCheckedInToday
-                                  ? Color(hex: "#4ECDC4").opacity(0.2)
+                                ? moodAccentColor.opacity(0.2)
                                   : Color(hex: "#E94560").opacity(0.15))
                             .frame(width: 52, height: 52)
                         if checkInVM.isLoading {
@@ -253,14 +267,14 @@ struct EmployeeDashboardView: View {
                     Image(systemName: checkInVM.hasCheckedInToday
                           ? "checkmark.circle.fill" : "chevron.right")
                         .foregroundColor(checkInVM.hasCheckedInToday
-                                         ? Color(hex: "#4ECDC4") : .white.opacity(0.3))
+                                                                                 ? moodAccentColor : .white.opacity(0.3))
                 }
                 .padding(16)
                 .background(Color.white.opacity(0.07))
                 .cornerRadius(16)
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(
                     checkInVM.hasCheckedInToday
-                    ? Color(hex: "#4ECDC4").opacity(0.35)
+                                        ? moodAccentColor.opacity(0.35)
                     : Color(hex: "#E94560").opacity(0.25), lineWidth: 1))
             }
 
@@ -269,7 +283,7 @@ struct EmployeeDashboardView: View {
                 StatCard(title: "Check-ins",
                          value: "\(checkInVM.recentCheckIns.count)",
                          icon: "checkmark.circle.fill",
-                         color: Color(hex: "#4ECDC4"))
+                         color: moodAccentColor)
                 StatCard(title: "Streak",
                          value: streakCount(),
                          icon: "flame.fill",
@@ -292,7 +306,7 @@ struct EmployeeDashboardView: View {
             DeskHiveCard {
                 VStack(spacing: 0) {
                     quickRow(icon: "person.3.sequence.fill",
-                             title: "My Communities",
+                             title: "My Micro Communities",
                              color: Color(hex: "#4ECDC4")) {
                         withAnimation { selectedTab = .communities }
                     }
@@ -354,7 +368,7 @@ struct EmployeeDashboardView: View {
     // ====================================================================
     private var communitiesTab: some View {
         VStack(spacing: 18) {
-            sectionHeader("My Communities")
+            sectionHeader("My Micro Communities")
 
             EmployeeCommunitiesView(
                 employeeID:    appState.currentUser?.id    ?? "",

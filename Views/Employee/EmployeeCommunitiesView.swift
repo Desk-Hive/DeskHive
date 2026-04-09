@@ -34,10 +34,10 @@ struct EmployeeCommunitiesView: View {
                         .font(.system(size: 22))
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("My Communities")
+                    Text("My Micro Communities")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white)
-                    Text("Communities you've been added to")
+                    Text("Micro communities you've been added to")
                         .font(.system(size: 12))
                         .foregroundColor(.white.opacity(0.5))
                 }
@@ -57,10 +57,10 @@ struct EmployeeCommunitiesView: View {
                     Image(systemName: "person.3.sequence")
                         .font(.system(size: 40))
                         .foregroundColor(.white.opacity(0.2))
-                    Text("No communities yet")
+                    Text("No micro communities yet")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.4))
-                    Text("Your admin will add you to a community.")
+                    Text("Your admin will add you to a micro community.")
                         .font(.system(size: 13))
                         .foregroundColor(.white.opacity(0.3))
                         .multilineTextAlignment(.center)

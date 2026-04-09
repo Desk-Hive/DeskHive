@@ -141,13 +141,15 @@ struct SuccessBanner: View {
 
 // MARK: - App Background
 struct AppBackground: View {
+    var colors: [Color] = [
+        Color(hex: "#1A1A2E"),
+        Color(hex: "#16213E"),
+        Color(hex: "#0F3460")
+    ]
+
     var body: some View {
         LinearGradient(
-            gradient: Gradient(colors: [
-                Color(hex: "#1A1A2E"),
-                Color(hex: "#16213E"),
-                Color(hex: "#0F3460")
-            ]),
+            gradient: Gradient(colors: colors),
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )

@@ -346,7 +346,7 @@ struct ProjectLeadDashboardView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         InfoRow(icon: "folder.fill",       title: "Project",   value: c.project.isEmpty ? "—" : c.project)
                         Divider().background(Color.white.opacity(0.1))
-                        InfoRow(icon: "person.3.fill",     title: "Community", value: c.name)
+                        InfoRow(icon: "person.3.fill",     title: "Micro Community", value: c.name)
                         Divider().background(Color.white.opacity(0.1))
                         InfoRow(icon: "person.2.fill",     title: "Members",   value: "\(c.memberIDs.count)")
                         Divider().background(Color.white.opacity(0.1))
@@ -496,7 +496,7 @@ struct ProjectLeadDashboardView: View {
             // Stats
             HStack(spacing: 12) {
                 StatCard(title: "Members",   value: "\(c.memberIDs.count)", icon: "person.2.fill",    color: Color(hex: "#4ECDC4"))
-                StatCard(title: "Community", value: c.name.isEmpty ? "—" : c.name, icon: "person.3.sequence.fill", color: Color(hex: "#F5A623"))
+                StatCard(title: "Micro Community", value: c.name.isEmpty ? "—" : c.name, icon: "person.3.sequence.fill", color: Color(hex: "#F5A623"))
             }
 
             // Description
@@ -624,7 +624,7 @@ struct ProjectLeadDashboardView: View {
             Text("No Project Assigned Yet")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white.opacity(0.6))
-            Text("Your admin has not assigned a project community to you yet.")
+            Text("Your admin has not assigned a project micro community to you yet.")
                 .font(.system(size: 13))
                 .foregroundColor(.white.opacity(0.35))
                 .multilineTextAlignment(.center)

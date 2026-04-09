@@ -45,6 +45,33 @@ enum CheckInMood: String, CaseIterable, Codable {
         case .stressed: return "#A78BFA"
         }
     }
+
+    // Theme accent used for mood-personalized employee UI.
+    var themeAccent: String {
+        switch self {
+        case .great:    return "#34D399"
+        case .good:     return "#4ECDC4"
+        case .okay:     return "#F5A623"
+        case .low:      return "#8AB4F8"
+        case .stressed: return "#A78BFA"
+        }
+    }
+
+    // Mood-based gradient palette for dashboard background.
+    var themeGradient: [String] {
+        switch self {
+        case .great:
+            return ["#0C2F28", "#145749", "#1D7A67"]
+        case .good:
+            return ["#133147", "#1B4D69", "#276B8A"]
+        case .okay:
+            return ["#2E2519", "#4A351D", "#6B4A1E"]
+        case .low:
+            return ["#1B2431", "#22364C", "#2A4E6C"]
+        case .stressed:
+            return ["#251A38", "#3A2860", "#503682"]
+        }
+    }
 }
 
 // MARK: - CheckIn Model

@@ -449,7 +449,7 @@ struct LeadPostAnnouncementSheet: View {
         } else {
             // Send to each community member individually (type: task-like but "announcement")
             guard let c = community else {
-                errorMsg = "No community found."
+                errorMsg = "No micro community found."
                 isSaving = false
                 return
             }

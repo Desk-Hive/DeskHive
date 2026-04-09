@@ -3,7 +3,7 @@
 //  DeskHive
 //
 //  Root view for the admin role. Hosts a horizontal tab bar that switches
-//  between five sections: Home overview, Employees list, Microcommunities,
+//  between five sections: Home overview, Employees list, Micro Communities,
 //  Announcements, and Issue Reports. All child view-models are owned here
 //  so that data is shared across tabs without extra fetches.
 //
@@ -84,7 +84,7 @@ struct AdminDashboardView: View {
                             selectedTab = .employees
                             Task { await adminVM.fetchMembers() }
                         }
-                        TabButton(title: "Communities", icon: "person.3.sequence.fill", selected: selectedTab == .communities) {
+                        TabButton(title: "Micro Communities", icon: "person.3.sequence.fill", selected: selectedTab == .communities) {
                             selectedTab = .communities
                         }
                         TabButton(title: "Announce", icon: "megaphone.fill", selected: selectedTab == .announcements) {
@@ -180,7 +180,7 @@ struct AdminDashboardView: View {
                     color: Color(hex: "#4ECDC4")
                 )
                 StatCard(
-                    title: "Communities",
+                    title: "Micro Communities",
                     value: "\(communityVM.communities.count)",
                     icon: "person.3.sequence.fill",
                     color: Color(hex: "#F5A623")
@@ -205,8 +205,8 @@ struct AdminDashboardView: View {
                 }
 
                 ActionCard(
-                    title: "Microcommunities",
-                    subtitle: "Create and manage project communities",
+                    title: "Micro Communities",
+                    subtitle: "Create and manage project micro communities",
                     icon: "person.3.sequence.fill",
                     color: Color(hex: "#F5A623")
                 ) {

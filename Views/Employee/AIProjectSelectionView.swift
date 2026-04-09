@@ -81,7 +81,7 @@ struct AIProjectSelectionView: View {
                         Text("No projects assigned")
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.white.opacity(0.6))
-                        Text("You need to be added to a community\nby your admin to use AI chat.")
+                        Text("You need to be added to a micro community\nby your admin to use AI chat.")
                             .font(.system(size: 13))
                             .foregroundColor(.white.opacity(0.35))
                             .multilineTextAlignment(.center)
