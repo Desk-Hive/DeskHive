@@ -48,7 +48,7 @@ struct AdminDashboardView: View {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.white.opacity(0.9))
-                            .frame(width: 38, height: 38)
+                            .frame(width: 34, height: 34)
                             .background(Color.white.opacity(0.1))
                             .clipShape(Circle())
                     }
@@ -104,12 +104,16 @@ struct AdminDashboardView: View {
                     if selectedTab == .home {
                         homeContent
                     } else if selectedTab == .employees {
+                        panelBackButton { selectedTab = .home }
                         employeesContent
                     } else if selectedTab == .communities {
+                        panelBackButton { selectedTab = .home }
                         AdminCommunitiesView(communityVM: communityVM, adminVM: adminVM)
                     } else if selectedTab == .announcements {
+                        panelBackButton { selectedTab = .home }
                         AdminAnnouncementsView()
                     } else {
+                        panelBackButton { selectedTab = .home }
                         AdminIssuesView(adminVM: adminVM)
                     }
                 }
@@ -136,6 +140,29 @@ struct AdminDashboardView: View {
             eomVM.startListening()
         }
         .onDisappear { eomVM.stopListening() }  // Release Firestore listener to avoid leaks
+    }
+
+    private func panelBackButton(action: @escaping () -> Void) -> some View {
+        HStack {
+            Button(action: action) {
+                HStack(spacing: 6) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("Back")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundColor(.white.opacity(0.85))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(Color.white.opacity(0.08))
+                .cornerRadius(10)
+                .overlay(RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.white.opacity(0.12), lineWidth: 1))
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 10)
     }
 
     // MARK: - Home Tab

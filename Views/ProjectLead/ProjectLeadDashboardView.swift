@@ -80,10 +80,16 @@ struct ProjectLeadDashboardView: View {
                     VStack(spacing: 0) {
                         switch selectedTab {
                         case .home:    homeTab
-                        case .project: projectTab
-                        case .tasks:   tasksTab
+                        case .project:
+                            panelBackButton { withAnimation(.easeInOut(duration: 0.2)) { selectedTab = .home } }
+                            projectTab
+                        case .tasks:
+                            panelBackButton { withAnimation(.easeInOut(duration: 0.2)) { selectedTab = .home } }
+                            tasksTab
                         case .inbox:   inboxTab
-                        case .profile: profileTab
+                        case .profile:
+                            panelBackButton { withAnimation(.easeInOut(duration: 0.2)) { selectedTab = .home } }
+                            profileTab
                         }
                     }
                     .padding(.horizontal, 20)
@@ -635,6 +641,27 @@ struct ProjectLeadDashboardView: View {
     // ====================================================================
     // MARK: - Helpers
     // ====================================================================
+    private func panelBackButton(action: @escaping () -> Void) -> some View {
+        HStack {
+            Button(action: action) {
+                HStack(spacing: 6) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("Back")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundColor(.white.opacity(0.85))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(Color.white.opacity(0.08))
+                .cornerRadius(10)
+                .overlay(RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.white.opacity(0.12), lineWidth: 1))
+            }
+            Spacer()
+        }
+    }
+
     private func sectionLabel(_ text: String) -> some View {
         HStack {
             Text(text)
