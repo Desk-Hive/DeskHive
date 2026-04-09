@@ -26,6 +26,7 @@ struct ProjectLeadDashboardView: View {
     @State private var showMyIssues    = false
     @State private var showFeed        = false
     @State private var showNews        = false
+    @State private var showDocUpload   = false
 
     enum PLTab { case home, project, tasks, inbox, profile }
 
@@ -94,6 +95,11 @@ struct ProjectLeadDashboardView: View {
         }
         .sheet(isPresented: $showNews) {
             TechNewsView()
+        }
+        .sheet(isPresented: $showDocUpload) {
+            if let c = myCommunity, let uid = appState.currentUser?.id {
+                ProjectDocUploadView(communityID: c.id, uploaderUID: uid)
+            }
         }
         .fullScreenCover(isPresented: $showFeed) {
             if let community = myCommunity {
@@ -193,6 +199,13 @@ struct ProjectLeadDashboardView: View {
                         qRow(icon: "bubble.left.and.bubble.right.fill",
                              title: "Open Team Feed",
                              color: Color(hex: "#4ECDC4")) { showFeed = true }
+                        divider()
+                        qRow(icon: "doc.badge.plus",
+                             title: "Project Documents & AI",
+                             color: Color(hex: "#F5A623")) {
+                            withAnimation { selectedTab = .project }
+                            showDocUpload = true
+                        }
                         divider()
                     }
                     qRow(icon: "bell.badge.fill",
@@ -556,6 +569,32 @@ struct ProjectLeadDashboardView: View {
                 .cornerRadius(14)
                 .overlay(RoundedRectangle(cornerRadius: 14)
                     .stroke(Color(hex: "#4ECDC4").opacity(0.2), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+
+            // Upload / manage project documents
+            Button(action: { showDocUpload = true }) {
+                HStack(spacing: 10) {
+                    Image(systemName: "doc.badge.plus")
+                        .font(.system(size: 18))
+                        .foregroundColor(Color(hex: "#F5A623"))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Project Documents & AI")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
+                        Text("Upload .docx files — AI will embed them for team Q&A")
+                            .font(.system(size: 11))
+                            .foregroundColor(.white.opacity(0.45))
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.white.opacity(0.3)).font(.system(size: 12))
+                }
+                .padding(14)
+                .background(Color(hex: "#F5A623").opacity(0.07))
+                .cornerRadius(14)
+                .overlay(RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color(hex: "#F5A623").opacity(0.2), lineWidth: 1))
             }
             .buttonStyle(.plain)
         }

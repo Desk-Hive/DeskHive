@@ -359,75 +359,61 @@ struct CompactNewsCard: View {
     }
 }
 
-// MARK: - News Preview Section (used inline in dashboards)
+// MARK: - News Preview Section (used inline in dashboards — single entry card)
 struct NewsPreviewSection: View {
     @StateObject private var viewModel = NewsViewModel()
     let accentColor: Color
     let onSeeAll: () -> Void
 
     var body: some View {
-        VStack(spacing: 14) {
-            // Section header
-            HStack {
-                HStack(spacing: 8) {
+        Button(action: onSeeAll) {
+            HStack(spacing: 16) {
+                // Icon
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(accentColor.opacity(0.15))
+                        .frame(width: 52, height: 52)
                     Image(systemName: "newspaper.fill")
-                        .font(.system(size: 15))
+                        .font(.system(size: 22))
                         .foregroundColor(accentColor)
-                    Text("Tech News")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Latest News")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
+                    if viewModel.isLoading {
+                        Text("Fetching latest tech news…")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.4))
+                    } else if let first = viewModel.articles.first {
+                        Text(first.cleanTitle)
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.5))
+                            .lineLimit(1)
+                    } else {
+                        Text("Latest in software & technology")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.4))
+                    }
                 }
+
                 Spacer()
-                Button(action: onSeeAll) {
-                    HStack(spacing: 4) {
-                        Text("See All")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(accentColor)
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(accentColor)
-                    }
-                }
-            }
 
-            if viewModel.isLoading {
-                newsSkeletonView
-            } else if let err = viewModel.errorMessage {
-                ErrorBanner(message: err)
-            } else {
-                VStack(spacing: 10) {
-                    ForEach(viewModel.articles.prefix(3)) { article in
-                        InlineNewsRow(article: article, accentColor: accentColor)
-                    }
-                }
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.3))
             }
+            .padding(16)
+            .background(Color.white.opacity(0.07))
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(accentColor.opacity(0.25), lineWidth: 1)
+            )
         }
+        .buttonStyle(.plain)
         .task { await viewModel.fetchTechNews() }
-    }
-
-    private var newsSkeletonView: some View {
-        VStack(spacing: 10) {
-            ForEach(0..<3, id: \.self) { _ in
-                HStack(spacing: 12) {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.white.opacity(0.07))
-                        .frame(width: 60, height: 60)
-                    VStack(alignment: .leading, spacing: 8) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.white.opacity(0.07))
-                            .frame(height: 12)
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.white.opacity(0.05))
-                            .frame(height: 10)
-                            .padding(.trailing, 40)
-                    }
-                    Spacer()
-                }
-                .padding(12)
-                .background(Color.white.opacity(0.05))
-                .cornerRadius(12)
-            }
-        }
     }
 }
 

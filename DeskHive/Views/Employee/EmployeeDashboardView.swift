@@ -20,6 +20,7 @@ struct EmployeeDashboardView: View {
     @State private var showIssueReport = false
     @State private var showMyIssues    = false
     @State private var showNews        = false
+    @State private var showAIChat      = false
     @StateObject private var issueVM  = IssueReportViewModel()
 
     enum EmployeeTab { case home, communities, work, inbox, profile }
@@ -79,6 +80,37 @@ struct EmployeeDashboardView: View {
 
             // ── Bottom Tab Bar ───────────────────────────────────────────
             bottomTabBar
+
+            // ── Floating AI Button ───────────────────────────────────────
+            if selectedTab == .home {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button(action: { showAIChat = true }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 15, weight: .semibold))
+                                Text("AI Assistant")
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 12)
+                            .background(
+                                LinearGradient(colors: [Color(hex: "#7C3AED"), Color(hex: "#4ECDC4")],
+                                               startPoint: .leading, endPoint: .trailing)
+                            )
+                            .cornerRadius(24)
+                            .shadow(color: Color(hex: "#7C3AED").opacity(0.5), radius: 12, x: 0, y: 4)
+                        }
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 100) // above the tab bar
+                    }
+                }
+                .transition(.scale.combined(with: .opacity))
+                .animation(.spring(response: 0.35, dampingFraction: 0.7), value: selectedTab)
+            }
         }
         .ignoresSafeArea(edges: .top)
         .sheet(isPresented: $showCheckIn, onDismiss: {
@@ -99,6 +131,14 @@ struct EmployeeDashboardView: View {
         }
         .sheet(isPresented: $showNews) {
             TechNewsView()
+        }
+        .sheet(isPresented: $showAIChat) {
+            NavigationView {
+                AIProjectSelectionView(
+                    employeeID:    appState.currentUser?.id    ?? "",
+                    employeeEmail: appState.currentUser?.email ?? ""
+                )
+            }
         }
         // Start listening once the dashboard appears so employees see award changes
         // without manually refreshing the screen.
@@ -272,6 +312,15 @@ struct EmployeeDashboardView: View {
                              title: "Track My Issue",
                              color: Color(hex: "#A78BFA")) {
                         showMyIssues = true
+                    }
+
+                    divider()
+
+                    quickRow(icon: "sparkles",
+                             title: "AI Project Assistant",
+                             subtitle: "Ask questions about your project docs",
+                             color: Color(hex: "#7C3AED")) {
+                        showAIChat = true
                     }
                 }
             }
