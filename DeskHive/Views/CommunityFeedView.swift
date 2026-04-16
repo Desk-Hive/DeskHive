@@ -2,7 +2,7 @@
 //  CommunityFeedView.swift
 //  DeskHive
 //
-//  Reusable feed screen for a single microcommunity.
+//  Reusable feed screen for a single micro community.
 //  Works for both admin (isAdmin=true) and employees (isAdmin=false).
 //
 
@@ -91,7 +91,7 @@ struct CommunityFeedView: View {
                         Text("No messages yet")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white.opacity(0.4))
-                        Text("Be the first to post in this community.")
+                        Text("Be the first to post in this micro community.")
                             .font(.system(size: 13))
                             .foregroundColor(.white.opacity(0.3))
                     }

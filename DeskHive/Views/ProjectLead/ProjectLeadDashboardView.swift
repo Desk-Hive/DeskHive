@@ -71,10 +71,16 @@ struct ProjectLeadDashboardView: View {
                     VStack(spacing: 0) {
                         switch selectedTab {
                         case .home:    homeTab
-                        case .project: projectTab
-                        case .tasks:   tasksTab
+                        case .project:
+                            panelBackButton { withAnimation(.easeInOut(duration: 0.2)) { selectedTab = .home } }
+                            projectTab
+                        case .tasks:
+                            panelBackButton { withAnimation(.easeInOut(duration: 0.2)) { selectedTab = .home } }
+                            tasksTab
                         case .inbox:   inboxTab
-                        case .profile: profileTab
+                        case .profile:
+                            panelBackButton { withAnimation(.easeInOut(duration: 0.2)) { selectedTab = .home } }
+                            profileTab
                         }
                     }
                     .padding(.horizontal, 20)
@@ -287,7 +293,8 @@ struct ProjectLeadDashboardView: View {
     private var inboxTab: some View {
         ProjectLeadAnnouncementsView(
             community: myCommunity,
-            leadEmail: leadEmail
+            leadEmail: leadEmail,
+            onBack: { withAnimation(.easeInOut(duration: 0.2)) { selectedTab = .home } }
         )
         .environmentObject(appState)
     }
@@ -330,7 +337,7 @@ struct ProjectLeadDashboardView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         InfoRow(icon: "folder.fill",       title: "Project",   value: c.project.isEmpty ? "—" : c.project)
                         Divider().background(Color.white.opacity(0.1))
-                        InfoRow(icon: "person.3.fill",     title: "Community", value: c.name)
+                        InfoRow(icon: "person.3.fill",     title: "Micro Community", value: c.name)
                         Divider().background(Color.white.opacity(0.1))
                         InfoRow(icon: "person.2.fill",     title: "Members",   value: "\(c.memberIDs.count)")
                         Divider().background(Color.white.opacity(0.1))
@@ -480,7 +487,7 @@ struct ProjectLeadDashboardView: View {
             // Stats
             HStack(spacing: 12) {
                 StatCard(title: "Members",   value: "\(c.memberIDs.count)", icon: "person.2.fill",    color: Color(hex: "#4ECDC4"))
-                StatCard(title: "Community", value: c.name.isEmpty ? "—" : c.name, icon: "person.3.sequence.fill", color: Color(hex: "#F5A623"))
+                StatCard(title: "Micro Community", value: c.name.isEmpty ? "—" : c.name, icon: "person.3.sequence.fill", color: Color(hex: "#F5A623"))
             }
 
             // Description
@@ -608,7 +615,7 @@ struct ProjectLeadDashboardView: View {
             Text("No Project Assigned Yet")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white.opacity(0.6))
-            Text("Your admin has not assigned a project community to you yet.")
+            Text("Your admin has not assigned a project micro community to you yet.")
                 .font(.system(size: 13))
                 .foregroundColor(.white.opacity(0.35))
                 .multilineTextAlignment(.center)
@@ -625,6 +632,20 @@ struct ProjectLeadDashboardView: View {
     // ====================================================================
     // MARK: - Helpers
     // ====================================================================
+    private func panelBackButton(action: @escaping () -> Void) -> some View {
+        HStack {
+            Button(action: action) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
+                    .frame(width: 34, height: 34)
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(Circle())
+            }
+            Spacer()
+        }
+    }
+
     private func sectionLabel(_ text: String) -> some View {
         HStack {
             Text(text)

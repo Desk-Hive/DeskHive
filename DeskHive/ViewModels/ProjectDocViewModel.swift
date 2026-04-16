@@ -93,6 +93,22 @@ class ProjectDocViewModel: ObservableObject {
         let vectors: [[Float]]
         do {
             vectors = try await EmbeddingService.embedBatch(texts: chunkTexts)
+        } catch let error as EmbeddingError {
+            switch error {
+            case .networkError(let underlying):
+                errorMessage = "Network error during embedding: \(underlying.localizedDescription). Check your internet connection."
+            case .badResponse(let code):
+                if code == 401 {
+                    errorMessage = "Embedding failed: Invalid OpenAI API key (401). Please check your Secrets.xcconfig file."
+                } else {
+                    errorMessage = "OpenAI API error: HTTP \(code). The API may be unavailable or rate-limited."
+                }
+            case .decodingError:
+                errorMessage = "Embedding failed: Could not parse OpenAI response."
+            case .emptyResult:
+                errorMessage = "Embedding failed: OpenAI returned no vectors."
+            }
+            return
         } catch {
             errorMessage = "Embedding failed: \(error.localizedDescription)"
             return

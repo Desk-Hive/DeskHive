@@ -62,7 +62,7 @@ struct EmployeeProfileView: View {
             Task {
                 if let uid = appState.currentUser?.id {
                     await checkInVM.loadTodayStatus(uid: uid)
-                    await checkInVM.loadRecentCheckIns(uid: uid)
+                    await checkInVM.loadStats(uid: uid)
                 }
             }
         }
@@ -307,8 +307,8 @@ struct EmployeeProfileView: View {
     // ====================================================================
     private var statsRow: some View {
         HStack(spacing: 12) {
-            miniStat(title: "Check-ins", value: "\(checkInVM.recentCheckIns.count)", icon: "checkmark.circle.fill", color: accent)
-            miniStat(title: "Streak", value: streakCount(), icon: "flame.fill", color: gold)
+            miniStat(title: "Check-ins", value: "\(checkInVM.totalCheckIns)", icon: "checkmark.circle.fill", color: accent)
+            miniStat(title: "Streak", value: "\(checkInVM.currentStreak)🔥", icon: "flame.fill", color: gold)
             miniStat(title: "Salary Slips", value: "\(vm.statements.count)", icon: "doc.text.fill", color: accent2)
         }
     }
@@ -400,6 +400,23 @@ struct EmployeeProfileView: View {
                 }
                 .padding(.horizontal, 20)
             }
+            
+            // Close button
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: { showChangePw = false }) {
+                        Image(systemName: "xmark")
+                            .foregroundColor(.white.opacity(0.7))
+                            .frame(width: 34, height: 34)
+                            .background(Color.white.opacity(0.1))
+                            .clipShape(Circle())
+                    }
+                    .padding(.trailing, 24)
+                    .padding(.top, 56)
+                }
+                Spacer()
+            }
         }
     }
 
@@ -435,6 +452,23 @@ struct EmployeeProfileView: View {
                         .padding(.bottom, 40)
                     }
                 }
+            }
+            
+            // Close button
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: { showStatements = false }) {
+                        Image(systemName: "xmark")
+                            .foregroundColor(.white.opacity(0.7))
+                            .frame(width: 34, height: 34)
+                            .background(Color.white.opacity(0.1))
+                            .clipShape(Circle())
+                    }
+                    .padding(.trailing, 24)
+                    .padding(.top, 56)
+                }
+                Spacer()
             }
         }
     }
@@ -568,20 +602,6 @@ struct EmployeeProfileView: View {
     private func shortDate(_ d: Date) -> String {
         let f = DateFormatter(); f.dateStyle = .medium
         return f.string(from: d)
-    }
-
-    private func streakCount() -> String {
-        let keys = checkInVM.recentCheckIns.map { $0.dateKey }.sorted(by: >)
-        guard !keys.isEmpty else { return "0" }
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
-        var streak = 0; var check = Date()
-        for key in keys {
-            if key == f.string(from: check) {
-                streak += 1
-                check = Calendar.current.date(byAdding: .day, value: -1, to: check)!
-            } else { break }
-        }
-        return "\(streak)"
     }
 }
 

@@ -7,9 +7,11 @@ import SwiftUI
 
 struct EmployeeAnnouncementsView: View {
     @StateObject private var annVM   = AnnouncementViewModel()
+    var onBack: (() -> Void)? = nil
 
     @State private var selectedSegment: Int = 0   // 0=Announcements 1=Work
     @EnvironmentObject var appState: AppState
+    @Environment(\.dismiss) private var dismiss
 
     // Total unread badge count
     private var totalUnread: Int {
@@ -21,6 +23,21 @@ struct EmployeeAnnouncementsView: View {
 
             // ── Top bar ──────────────────────────────────────────────────
             HStack {
+                Button(action: {
+                    if let onBack {
+                        onBack()
+                    } else {
+                        dismiss()
+                    }
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.9))
+                        .frame(width: 34, height: 34)
+                        .background(Color.white.opacity(0.1))
+                        .clipShape(Circle())
+                }
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Inbox")
                         .font(.system(size: 22, weight: .bold, design: .rounded))

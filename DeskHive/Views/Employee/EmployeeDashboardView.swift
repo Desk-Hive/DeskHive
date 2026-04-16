@@ -21,13 +21,33 @@ struct EmployeeDashboardView: View {
     @State private var showMyIssues    = false
     @State private var showNews        = false
     @State private var showAIChat      = false
+    @State private var isRefreshingQuote = false
+    @State private var currentMoodQuote = MoodQuoteItem(
+        mood: "default",
+        quote: "Start where you are. Improve one thing today.",
+        author: "DeskHive"
+    )
     @StateObject private var issueVM  = IssueReportViewModel()
 
     enum EmployeeTab { case home, communities, work, inbox, profile }
 
+    private var moodAccentColor: Color {
+        if let mood = checkInVM.todayMood {
+            return Color(hex: mood.themeAccent)
+        }
+        return Color(hex: "#4ECDC4")
+    }
+
+    private var moodBackgroundColors: [Color] {
+        if let mood = checkInVM.todayMood {
+            return mood.themeGradient.map { Color(hex: $0) }
+        }
+        return [Color(hex: "#1A1A2E"), Color(hex: "#16213E"), Color(hex: "#0F3460")]
+    }
+
     var body: some View {
         ZStack(alignment: .bottom) {
-            AppBackground().ignoresSafeArea()
+            AppBackground(colors: moodBackgroundColors).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // ── Top Bar ──────────────────────────────────────────────
@@ -46,7 +66,7 @@ struct EmployeeDashboardView: View {
                     HStack(spacing: 6) {
                         Circle()
                             .fill(checkInVM.hasCheckedInToday
-                                  ? Color(hex: "#4ECDC4") : Color(hex: "#E94560"))
+                                  ? moodAccentColor : Color(hex: "#E94560"))
                             .frame(width: 8, height: 8)
                         Text(checkInVM.hasCheckedInToday ? "Checked In" : "Not Checked In")
                             .font(.system(size: 11, weight: .semibold))
@@ -66,10 +86,16 @@ struct EmployeeDashboardView: View {
                     VStack(spacing: 0) {
                         switch selectedTab {
                         case .home:        homeTab
-                        case .communities: communitiesTab
-                        case .work:        workTab
+                        case .communities:
+                            panelBackButton { withAnimation(.easeInOut(duration: 0.2)) { selectedTab = .home } }
+                            communitiesTab
+                        case .work:
+                            panelBackButton { withAnimation(.easeInOut(duration: 0.2)) { selectedTab = .home } }
+                            workTab
                         case .inbox:       inboxTab
-                        case .profile:     profileTab
+                        case .profile:
+                            panelBackButton { withAnimation(.easeInOut(duration: 0.2)) { selectedTab = .home } }
+                            profileTab
                         }
                     }
                     .padding(.horizontal, 20)
@@ -118,6 +144,7 @@ struct EmployeeDashboardView: View {
                 if let uid = appState.currentUser?.id {
                     await checkInVM.loadTodayStatus(uid: uid)
                     await checkInVM.loadRecentCheckIns(uid: uid)
+                    await updateMoodQuote()
                 }
             }
         }) {
@@ -146,8 +173,14 @@ struct EmployeeDashboardView: View {
             if let uid = appState.currentUser?.id {
                 await checkInVM.loadTodayStatus(uid: uid)
                 await checkInVM.loadRecentCheckIns(uid: uid)
+                await updateMoodQuote()
             }
             eomVM.startListening()
+        }
+        .onChange(of: checkInVM.todayMood?.rawValue) { _ in
+            Task {
+                await updateMoodQuote()
+            }
         }
         // Tear down the listener with the screen lifecycle.
         .onDisappear { eomVM.stopListening() }
@@ -159,7 +192,7 @@ struct EmployeeDashboardView: View {
     private var bottomTabBar: some View {
         HStack(spacing: 0) {
             tabBarItem(icon: "house.fill",                label: "Home",        tab: .home)
-            tabBarItem(icon: "person.3.sequence.fill",    label: "Communities", tab: .communities)
+            tabBarItem(icon: "person.3.sequence.fill",    label: "Micro Communities", tab: .communities)
             tabBarItem(icon: "checklist",                 label: "My Work",     tab: .work)
             tabBarItem(icon: "bell.badge.fill",           label: "Inbox",       tab: .inbox)
             tabBarItem(icon: "person.crop.circle",        label: "Profile",     tab: .profile)
@@ -186,11 +219,11 @@ struct EmployeeDashboardView: View {
             VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 20, weight: active ? .semibold : .regular))
-                    .foregroundColor(active ? Color(hex: "#4ECDC4") : .white.opacity(0.35))
+                    .foregroundColor(active ? moodAccentColor : .white.opacity(0.35))
                     .scaleEffect(active ? 1.1 : 1.0)
                 Text(label)
                     .font(.system(size: 10, weight: active ? .semibold : .regular))
-                    .foregroundColor(active ? Color(hex: "#4ECDC4") : .white.opacity(0.35))
+                    .foregroundColor(active ? moodAccentColor : .white.opacity(0.35))
             }
             .frame(maxWidth: .infinity)
         }
@@ -203,13 +236,16 @@ struct EmployeeDashboardView: View {
     private var homeTab: some View {
         VStack(spacing: 18) {
 
+            // ── Mood Quote ──────────────────────────────────────────────
+            moodQuoteCard
+
             // ── Daily Check-in card ──────────────────────────────────────
             Button(action: { showCheckIn = true }) {
                 HStack(spacing: 16) {
                     ZStack {
                         Circle()
                             .fill(checkInVM.hasCheckedInToday
-                                  ? Color(hex: "#4ECDC4").opacity(0.2)
+                                ? moodAccentColor.opacity(0.2)
                                   : Color(hex: "#E94560").opacity(0.15))
                             .frame(width: 52, height: 52)
                         if checkInVM.isLoading {
@@ -238,14 +274,14 @@ struct EmployeeDashboardView: View {
                     Image(systemName: checkInVM.hasCheckedInToday
                           ? "checkmark.circle.fill" : "chevron.right")
                         .foregroundColor(checkInVM.hasCheckedInToday
-                                         ? Color(hex: "#4ECDC4") : .white.opacity(0.3))
+                                                                                 ? moodAccentColor : .white.opacity(0.3))
                 }
                 .padding(16)
                 .background(Color.white.opacity(0.07))
                 .cornerRadius(16)
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(
                     checkInVM.hasCheckedInToday
-                    ? Color(hex: "#4ECDC4").opacity(0.35)
+                                        ? moodAccentColor.opacity(0.35)
                     : Color(hex: "#E94560").opacity(0.25), lineWidth: 1))
             }
 
@@ -254,7 +290,7 @@ struct EmployeeDashboardView: View {
                 StatCard(title: "Check-ins",
                          value: "\(checkInVM.recentCheckIns.count)",
                          icon: "checkmark.circle.fill",
-                         color: Color(hex: "#4ECDC4"))
+                         color: moodAccentColor)
                 StatCard(title: "Streak",
                          value: streakCount(),
                          icon: "flame.fill",
@@ -277,7 +313,7 @@ struct EmployeeDashboardView: View {
             DeskHiveCard {
                 VStack(spacing: 0) {
                     quickRow(icon: "person.3.sequence.fill",
-                             title: "My Communities",
+                             title: "My Micro Communities",
                              color: Color(hex: "#4ECDC4")) {
                         withAnimation { selectedTab = .communities }
                     }
@@ -334,12 +370,112 @@ struct EmployeeDashboardView: View {
         .padding(.top, 4)
     }
 
+    private var moodQuoteCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(moodAccentColor.opacity(0.18))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "quote.bubble.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(moodAccentColor)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Daily Motivation")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.95))
+                    Text("A quote matched to your check-in mood")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.white.opacity(0.55))
+                }
+
+                Spacer()
+
+                Text(moodBadgeText)
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.9))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(moodAccentColor.opacity(0.22))
+                    .overlay(
+                        Capsule().stroke(moodAccentColor.opacity(0.35), lineWidth: 1)
+                    )
+                    .clipShape(Capsule())
+            }
+
+            Text("\"\(currentMoodQuote.quote)\"")
+                .font(.system(size: 17, weight: .semibold, design: .serif))
+                .foregroundColor(.white.opacity(0.92))
+                .lineSpacing(4)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack {
+                Label(currentMoodQuote.author, systemImage: "person.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.62))
+
+                Spacer()
+
+                Button {
+                    Task { @MainActor in
+                        isRefreshingQuote = true
+                        await updateMoodQuote()
+                        isRefreshingQuote = false
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: isRefreshingQuote ? "hourglass" : "arrow.clockwise")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text(isRefreshingQuote ? "Loading" : "Refresh")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(.white.opacity(0.82))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(isRefreshingQuote)
+            }
+        }
+        .padding(16)
+        .background(
+            ZStack(alignment: .topTrailing) {
+                LinearGradient(
+                    colors: [Color.white.opacity(0.06), moodAccentColor.opacity(0.2)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                Circle()
+                    .fill(moodAccentColor.opacity(0.2))
+                    .frame(width: 120, height: 120)
+                    .blur(radius: 8)
+                    .offset(x: 40, y: -50)
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(moodAccentColor.opacity(0.38), lineWidth: 1)
+        )
+        .shadow(color: moodAccentColor.opacity(0.18), radius: 12, x: 0, y: 6)
+    }
+
+    private var moodBadgeText: String {
+        guard let mood = checkInVM.todayMood else { return "Default" }
+        return mood.rawValue.capitalized
+    }
+
     // ====================================================================
     // MARK: - COMMUNITIES Tab
     // ====================================================================
     private var communitiesTab: some View {
         VStack(spacing: 18) {
-            sectionHeader("My Communities")
+            sectionHeader("My Micro Communities")
 
             EmployeeCommunitiesView(
                 employeeID:    appState.currentUser?.id    ?? "",
@@ -364,7 +500,9 @@ struct EmployeeDashboardView: View {
     // MARK: - INBOX Tab (Announcements + Issues)
     // ====================================================================
     private var inboxTab: some View {
-        EmployeeAnnouncementsView()
+        EmployeeAnnouncementsView(
+            onBack: { withAnimation(.easeInOut(duration: 0.2)) { selectedTab = .home } }
+        )
             .environmentObject(appState)
     }
 
@@ -379,6 +517,20 @@ struct EmployeeDashboardView: View {
     // ====================================================================
     // MARK: - Helpers
     // ====================================================================
+    private func panelBackButton(action: @escaping () -> Void) -> some View {
+        HStack {
+            Button(action: action) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
+                    .frame(width: 34, height: 34)
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(Circle())
+            }
+            Spacer()
+        }
+    }
+
     private func sectionHeader(_ title: String) -> some View {
         HStack {
             Text(title)
@@ -449,6 +601,11 @@ struct EmployeeDashboardView: View {
             } else { break }
         }
         return "\(streak)"
+    }
+
+    @MainActor
+    private func updateMoodQuote() async {
+        currentMoodQuote = await MoodQuoteProvider.shared.fetchQuote(for: checkInVM.todayMood)
     }
 }
 

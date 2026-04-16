@@ -22,12 +22,14 @@ struct DeskHiveTextField: View {
             }
 
             if isSecure {
-                SecureField(placeholder, text: $text)
+                SecureField("", text: $text,
+                            prompt: Text(placeholder).foregroundColor(.white.opacity(0.45)))
                     .foregroundColor(.white)
                     .tint(.white)
                     .autocorrectionDisabled()
             } else {
-                TextField(placeholder, text: $text)
+                TextField("", text: $text,
+                          prompt: Text(placeholder).foregroundColor(.white.opacity(0.45)))
                     .foregroundColor(.white)
                     .tint(.white)
                     .autocorrectionDisabled()
@@ -141,13 +143,15 @@ struct SuccessBanner: View {
 
 // MARK: - App Background
 struct AppBackground: View {
+    var colors: [Color] = [
+        Color(hex: "#1A1A2E"),
+        Color(hex: "#16213E"),
+        Color(hex: "#0F3460")
+    ]
+
     var body: some View {
         LinearGradient(
-            gradient: Gradient(colors: [
-                Color(hex: "#1A1A2E"),
-                Color(hex: "#16213E"),
-                Color(hex: "#0F3460")
-            ]),
+            gradient: Gradient(colors: colors),
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
@@ -242,6 +246,21 @@ struct InfoRow: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white)
                 .lineLimit(1)
+        }
+    }
+}
+
+// MARK: - Back Button
+struct BackButton: View {
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        Button(action: { dismiss() }) {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white.opacity(0.9))
+                .frame(width: 34, height: 34)
+                .background(Color.white.opacity(0.08))
+                .clipShape(Circle())
         }
     }
 }

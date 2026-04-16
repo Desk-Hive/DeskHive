@@ -2,48 +2,46 @@
 //  AdminDashboardView.swift
 //  DeskHive
 //
-//  Root view for the admin role. Hosts a horizontal tab bar that switches
-//  between five sections: Home overview, Employees list, Microcommunities,
-//  Announcements, and Issue Reports. All child view-models are owned here
-//  so that data is shared across tabs without extra fetches.
-//
 
 import SwiftUI
 
-// Admin landing screen.
-// For Employee of the Month, this dashboard hosts the admin management entry point,
-// keeps a live listener for the current month's winner, and renders the shared
-// spotlight card/empty state on the home tab.
 struct AdminDashboardView: View {
-    // Shared app-wide state (current user, auth status, etc.)
     @EnvironmentObject var appState: AppState
 
-    // View-models are owned at this level so data persists while switching tabs
-    @StateObject private var adminVM = AdminViewModel()
-    @StateObject private var authVM = AuthViewModel()
+    @StateObject private var adminVM     = AdminViewModel()
+    @StateObject private var authVM      = AuthViewModel()
     @StateObject private var communityVM = CommunityViewModel()
-    // Dedicated feature view model so admin actions and the home card stay in sync.
-    @StateObject private var eomVM = EmployeeOfMonthViewModel()
+    @StateObject private var eomVM       = EmployeeOfMonthViewModel()
 
-    // Controls which tab is currently visible
     @State private var selectedTab: AdminTab = .home
+    @State private var showNews: Bool = false
+    @State private var showEOM: Bool  = false
 
-    // Sheet presentation flags
-    @State private var showNews: Bool = false  // Tech news full-screen sheet
-    @State private var showEOM: Bool = false   // Employee of the Month picker sheet
+    enum AdminTab { case home, employees, communities, announcements, issues, profile }
 
-    /// Identifies each section in the admin navigation bar.
-    enum AdminTab {
-        case home, employees, communities, announcements, issues
-    }
+    private let accent = Color(hex: "#4ECDC4")
+    private let gold   = Color(hex: "#F5A623")
+    private let red    = Color(hex: "#E94560")
 
     var body: some View {
         ZStack {
             AppBackground()
 
             VStack(spacing: 0) {
-                // Top navigation bar
-                HStack {
+
+                // ── Top navigation bar ─────────────────────────────
+                HStack(alignment: .center) {
+                    if selectedTab == .profile {
+                        Button(action: { withAnimation { selectedTab = .home } }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.9))
+                                .frame(width: 34, height: 34)
+                                .background(Color.white.opacity(0.1))
+                                .clipShape(Circle())
+                        }
+                    }
+
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Welcome back,")
                             .font(.system(size: 14, weight: .regular))
@@ -52,205 +50,265 @@ struct AdminDashboardView: View {
                             .font(.system(size: 22, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                     }
+
                     Spacer()
-                    Button(action: { authVM.signOut(appState: appState) }) {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .foregroundColor(.white.opacity(0.8))
-                            .frame(width: 38, height: 38)
-                            .background(Color.white.opacity(0.1))
-                            .clipShape(Circle())
+
+                    // Profile button in top-right
+                    if selectedTab != .profile {
+                        Button(action: { withAnimation { selectedTab = .profile } }) {
+                            ZStack {
+                                Circle()
+                                    .fill(accent.opacity(0.15))
+                                    .frame(width: 38, height: 38)
+                                Image(systemName: "person.crop.circle")
+                                    .font(.system(size: 20, weight: .medium))
+                                    .foregroundColor(accent)
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 56)
-                .padding(.bottom, 20)
+                .padding(.bottom, 16)
 
-                // Tab Selector
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 0) {
-                        TabButton(title: "Home", icon: "square.grid.2x2", selected: selectedTab == .home) {
-                            selectedTab = .home
+                // ── Horizontal Tab Selector (hidden on profile) ────
+                if selectedTab != .profile {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            TabButton(title: "Home", icon: "square.grid.2x2", selected: selectedTab == .home) { selectedTab = .home }
+                            TabButton(title: "Employees", icon: "person.3", selected: selectedTab == .employees) { selectedTab = .employees; Task { await adminVM.fetchMembers() } }
+                            TabButton(title: "Communities", icon: "person.3.sequence.fill", selected: selectedTab == .communities) { selectedTab = .communities }
+                            TabButton(title: "Announce", icon: "megaphone.fill", selected: selectedTab == .announcements) { selectedTab = .announcements }
+                            TabButton(title: "Issues", icon: "exclamationmark.shield.fill", selected: selectedTab == .issues) { selectedTab = .issues; Task { await adminVM.fetchIssues() } }
                         }
-                        TabButton(title: "Employees", icon: "person.3", selected: selectedTab == .employees) {
-                            selectedTab = .employees
-                            Task { await adminVM.fetchMembers() }
-                        }
-                        TabButton(title: "Communities", icon: "person.3.sequence.fill", selected: selectedTab == .communities) {
-                            selectedTab = .communities
-                        }
-                        TabButton(title: "Announce", icon: "megaphone.fill", selected: selectedTab == .announcements) {
-                            selectedTab = .announcements
-                        }
-                        TabButton(title: "Issues", icon: "exclamationmark.shield.fill", selected: selectedTab == .issues) {
-                            selectedTab = .issues
-                            Task { await adminVM.fetchIssues() }
-                        }
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 4)
                     }
-                    .padding(.horizontal, 24)
+                    .padding(.bottom, 12)
                 }
-                .padding(.bottom, 20)
 
-                // Content
+                // ── Content ────────────────────────────────────────
                 ScrollView(showsIndicators: true) {
-                    if selectedTab == .home {
-                        homeContent
-                    } else if selectedTab == .employees {
-                        employeesContent
-                    } else if selectedTab == .communities {
-                        AdminCommunitiesView(communityVM: communityVM, adminVM: adminVM)
-                    } else if selectedTab == .announcements {
-                        AdminAnnouncementsView()
-                    } else {
-                        AdminIssuesView(adminVM: adminVM)
+                    switch selectedTab {
+                    case .home:          homeContent
+                    case .employees:     panelBackButton { selectedTab = .home }; employeesContent
+                    case .communities:   panelBackButton { selectedTab = .home }; AdminCommunitiesView(communityVM: communityVM, adminVM: adminVM)
+                    case .announcements: panelBackButton { selectedTab = .home }; AdminAnnouncementsView()
+                    case .issues:        panelBackButton { selectedTab = .home }; AdminIssuesView(adminVM: adminVM)
+                    case .profile:       adminProfileContent
                     }
                 }
             }
         }
-        .sheet(isPresented: $showNews) {
-            TechNewsView()
-        }
-        // Opens the feature's admin management sheet with the current member list.
+        .sheet(isPresented: $showNews) { TechNewsView() }
         .sheet(isPresented: $showEOM) {
-            AdminEmployeeOfMonthView(
-                vm: eomVM,
-                members: adminVM.members,
-                adminEmail: appState.currentUser?.email ?? ""
-            )
+            AdminEmployeeOfMonthView(vm: eomVM, members: adminVM.members, adminEmail: appState.currentUser?.email ?? "")
         }
-        // Load supporting dashboard data, then start listening for this month's award
-        // so the home card updates immediately after any admin save/clear action.
         .task {
-            // Pre-load members and communities on first appearance;
-            // EOM listener streams real-time updates via Firestore.
             await adminVM.fetchMembers()
             await communityVM.fetchCommunities()
             eomVM.startListening()
         }
-        .onDisappear { eomVM.stopListening() }  // Release Firestore listener to avoid leaks
+        .onDisappear { eomVM.stopListening() }
     }
 
-    // MARK: - Home Tab
-    /// Summary overview shown when the admin first opens the dashboard.
-    /// Displays at-a-glance stats, quick-action shortcuts, the current
-    /// Employee of the Month spotlight, and a tech-news preview.
-    var homeContent: some View {
+    // MARK: - Back Button
+
+    private func panelBackButton(action: @escaping () -> Void) -> some View {
+        HStack {
+            Button(action: action) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
+                    .frame(width: 34, height: 34)
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(Circle())
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 8)
+        .padding(.bottom, 10)
+    }
+
+    // MARK: - Profile Content
+
+    private var adminProfileContent: some View {
         VStack(spacing: 20) {
-            // Stats cards — counts derived live from fetched Firestore data
-            HStack(spacing: 16) {
-                StatCard(
-                    title: "Total Employees",
-                    value: "\(adminVM.members.filter { $0.role == .employee }.count)",
-                    icon: "person.2.fill",
-                    color: Color(hex: "#4ECDC4")
-                )
-                StatCard(
-                    title: "Communities",
-                    value: "\(communityVM.communities.count)",
-                    icon: "person.3.sequence.fill",
-                    color: Color(hex: "#F5A623")
-                )
-            }
-            .padding(.horizontal, 24)
-
-            // Quick actions
-            VStack(alignment: .leading, spacing: 14) {
-                Text("Quick Actions")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
-
-                ActionCard(
-                    title: "View Employees",
-                    subtitle: "See all employees registered in the app",
-                    icon: "person.3.fill",
-                    color: Color(hex: "#4ECDC4")
-                ) {
-                    selectedTab = .employees
-                    Task { await adminVM.fetchMembers() }
-                }
-
-                ActionCard(
-                    title: "Microcommunities",
-                    subtitle: "Create and manage project communities",
-                    icon: "person.3.sequence.fill",
-                    color: Color(hex: "#F5A623")
-                ) {
-                    selectedTab = .communities
-                }
-
-                ActionCard(
-                    title: "Announcements",
-                    subtitle: "Post official messages to all employees",
-                    icon: "megaphone.fill",
-                    color: Color(hex: "#4ECDC4")
-                ) {
-                    selectedTab = .announcements
-                }
-
-                ActionCard(
-                    title: "Review Issues",
-                    subtitle: "View and respond to anonymous reports",
-                    icon: "exclamationmark.shield.fill",
-                    color: Color(hex: "#A78BFA")
-                ) {
-                    selectedTab = .issues
-                    Task { await adminVM.fetchIssues() }
-                }
-
-                ActionCard(
-                    title: "Employee of the Month",
-                    subtitle: "Spotlight a star employee this month",
-                    icon: "trophy.fill",
-                    color: Color(hex: "#F5A623")
-                ) {
-                    showEOM = true
-                }
-            }
-            .padding(.horizontal, 24)
-
-            // ── Employee of the Month card ────────────────────────────────
-            VStack(spacing: 12) {
-                HStack {
-                    Text("Employee of the Month")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
+            // Avatar
+            VStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(colors: [accent, Color(hex: "#44A8B3")],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 80, height: 80)
+                    Image(systemName: "shield.checkered")
+                        .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.white)
-                    Spacer()
-                    Button(action: { showEOM = true }) {
-                        HStack(spacing: 4) {
-                            Text(eomVM.current == nil ? "Select" : "Change")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(Color(hex: "#F5A623"))
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundColor(Color(hex: "#F5A623"))
-                        }
-                    }
                 }
-                // Read-only preview of the current monthly winner.
-                if let award = eomVM.current {
-                    EmployeeOfMonthCard(award: award)
-                } else {
-                    EmployeeOfMonthEmptyCard()
+                Text(appState.currentUser?.email ?? "Admin")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                Text("Administrator")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(accent)
+                    .padding(.horizontal, 10).padding(.vertical, 4)
+                    .background(accent.opacity(0.12))
+                    .cornerRadius(8)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 10)
+
+            // Info card
+            VStack(alignment: .leading, spacing: 14) {
+                Label("Account Info", systemImage: "person.text.rectangle.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.55))
+                Divider().background(Color.white.opacity(0.08))
+                HStack(spacing: 12) {
+                    Image(systemName: "envelope.fill").foregroundColor(accent).font(.system(size: 14)).frame(width: 28)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Email").font(.system(size: 11)).foregroundColor(.white.opacity(0.4))
+                        Text(appState.currentUser?.email ?? "\u{2014}").font(.system(size: 14, weight: .medium)).foregroundColor(.white.opacity(0.85))
+                    }
+                    Spacer()
+                }
+                HStack(spacing: 12) {
+                    Image(systemName: "shield.fill").foregroundColor(accent).font(.system(size: 14)).frame(width: 28)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Role").font(.system(size: 11)).foregroundColor(.white.opacity(0.4))
+                        Text("Admin").font(.system(size: 14, weight: .medium)).foregroundColor(.white.opacity(0.85))
+                    }
+                    Spacer()
                 }
             }
+            .padding(16)
+            .background(Color.white.opacity(0.07))
+            .cornerRadius(16)
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.1), lineWidth: 1))
             .padding(.horizontal, 24)
 
-            // ── Tech News ────────────────────────────────────────────────
-            NewsPreviewSection(accentColor: Color(hex: "#E94560")) {
-                showNews = true
+            // Sign Out
+            Button(action: { authVM.signOut(appState: appState) }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "rectangle.portrait.and.arrow.right").foregroundColor(red).font(.system(size: 18))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Sign Out").font(.system(size: 15, weight: .semibold)).foregroundColor(red)
+                        Text("You will be logged out").font(.system(size: 12)).foregroundColor(.white.opacity(0.4))
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").foregroundColor(red.opacity(0.5)).font(.system(size: 13))
+                }
+                .padding(16)
+                .background(red.opacity(0.08))
+                .cornerRadius(16)
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(red.opacity(0.2), lineWidth: 1))
             }
+            .buttonStyle(.plain)
             .padding(.horizontal, 24)
 
             Spacer().frame(height: 40)
         }
     }
 
-    // MARK: - Employees Tab (read-only)
-    /// Lists every registered user fetched from Firestore.
-    /// The admin can view member details but cannot edit them from this tab;
-    /// adding a new member is handled separately via AddMemberSheet.
+    // MARK: - Home Tab
+
+    var homeContent: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(spacing: 16) {
+                StatCard(title: "Total Employees",
+                         value: "\(adminVM.members.filter { $0.role == .employee }.count)",
+                         icon: "person.2.fill", color: accent)
+                StatCard(title: "Micro Communities",
+                         value: "\(communityVM.communities.count)",
+                         icon: "person.3.sequence.fill", color: gold)
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 8)
+
+            // Quick Actions
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Quick Actions")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.5))
+                    .textCase(.uppercase).tracking(0.8)
+                    .padding(.horizontal, 24)
+
+                VStack(spacing: 10) {
+                    ActionCard(title: "View Employees", subtitle: "See all employees registered in the app",
+                               icon: "person.3.fill", color: accent) {
+                        selectedTab = .employees; Task { await adminVM.fetchMembers() }
+                    }
+                    ActionCard(title: "Micro Communities", subtitle: "Create and manage project micro communities",
+                               icon: "person.3.sequence.fill", color: gold) {
+                        selectedTab = .communities
+                    }
+                    ActionCard(title: "Announcements", subtitle: "Post official messages to all employees",
+                               icon: "megaphone.fill", color: accent) {
+                        selectedTab = .announcements
+                    }
+                    ActionCard(title: "Review Issues", subtitle: "View and respond to anonymous reports",
+                               icon: "exclamationmark.shield.fill", color: Color(hex: "#A78BFA")) {
+                        selectedTab = .issues; Task { await adminVM.fetchIssues() }
+                    }
+                    ActionCard(title: "Employee of the Month", subtitle: "Spotlight a star employee this month",
+                               icon: "trophy.fill", color: gold) {
+                        showEOM = true
+                    }
+                }
+                .padding(.horizontal, 24)
+            }
+
+            // Employee of the Month
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("Employee of the Month")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.5))
+                        .textCase(.uppercase).tracking(0.8)
+                    Spacer()
+                    Button(action: { showEOM = true }) {
+                        HStack(spacing: 4) {
+                            Text(eomVM.current == nil ? "Select" : "Change")
+                                .font(.system(size: 12, weight: .semibold))
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                        .foregroundColor(gold)
+                    }
+                }
+                .padding(.horizontal, 24)
+
+                Group {
+                    if let award = eomVM.current {
+                        EmployeeOfMonthCard(award: award)
+                    } else {
+                        EmployeeOfMonthEmptyCard()
+                    }
+                }
+                .padding(.horizontal, 24)
+            }
+
+            // Tech News
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Tech News")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.5))
+                    .textCase(.uppercase).tracking(0.8)
+                    .padding(.horizontal, 24)
+
+                NewsPreviewSection(accentColor: red) { showNews = true }
+                    .padding(.horizontal, 24)
+            }
+
+            Spacer().frame(height: 40)
+        }
+    }
+
+    // MARK: - Employees Tab
+
     var employeesContent: some View {
         VStack(spacing: 16) {
-            // Header — shows total member count as a subtitle
             HStack {
                 Text("All Employees")
                     .font(.system(size: 20, weight: .bold, design: .rounded))
@@ -267,237 +325,157 @@ struct AdminDashboardView: View {
             }
 
             if adminVM.isLoading {
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    .padding(.top, 40)
+                ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .white)).padding(.top, 40)
             } else if adminVM.members.isEmpty {
-                EmptyStateView(
-                    icon: "person.3",
-                    title: "No Employees Yet",
-                    subtitle: "Employees who sign up will appear here."
-                )
-                .padding(.top, 40)
+                EmptyStateView(icon: "person.3", title: "No Employees Yet", subtitle: "Employees who sign up will appear here.").padding(.top, 40)
             } else {
                 LazyVStack(spacing: 12) {
-                    ForEach(adminVM.members) { member in
-                        EmployeeRow(member: member)
-                    }
+                    ForEach(adminVM.members) { member in EmployeeRow(member: member) }
                 }
                 .padding(.horizontal, 24)
             }
-
             Spacer().frame(height: 40)
         }
     }
 }
 
-// MARK: - Supporting Views
+// MARK: - Tab Button
 
-/// A single pill-shaped button used in the admin's horizontal tab bar.
-/// Highlights with a frosted-glass background when `selected` is true.
 struct TabButton: View {
-    let title: String
-    let icon: String
-    let selected: Bool
-    let action: () -> Void
-
+    let title: String; let icon: String; let selected: Bool; let action: () -> Void
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
-                Image(systemName: icon)
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
+                Image(systemName: icon).font(.system(size: 12, weight: .semibold))
+                Text(title).font(.system(size: 13, weight: .semibold))
             }
             .foregroundColor(selected ? .white : .white.opacity(0.5))
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity)
-            .background(selected ? Color.white.opacity(0.15) : Color.clear)
+            .padding(.horizontal, 14).padding(.vertical, 9)
+            .background(selected ? Color.white.opacity(0.15) : Color.white.opacity(0.06))
             .cornerRadius(10)
         }
+        .buttonStyle(.plain)
     }
 }
 
-/// Displays a single numeric metric (e.g. total employees) with a tinted icon.
-/// Used in the Home tab's top statistics row.
-struct StatCard: View {
-    let title: String
-    let value: String
-    let icon: String
-    let color: Color
+// MARK: - Stat Card
 
+struct StatCard: View {
+    let title: String; let value: String; let icon: String; let color: Color
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: icon)
-                    .foregroundColor(color)
-                    .font(.system(size: 20))
-                Spacer()
-            }
-            Text(value)
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-            Text(title)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.white.opacity(0.6))
+            HStack { Image(systemName: icon).foregroundColor(color).font(.system(size: 20)); Spacer() }
+            Text(value).font(.system(size: 32, weight: .bold, design: .rounded)).foregroundColor(.white)
+            Text(title).font(.system(size: 12, weight: .medium)).foregroundColor(.white.opacity(0.6))
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white.opacity(0.08))
-        .cornerRadius(16)
+        .background(Color.white.opacity(0.08)).cornerRadius(16)
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(color.opacity(0.3), lineWidth: 1))
     }
 }
 
-/// A tappable card in the Home tab's "Quick Actions" section.
-/// Navigates to the corresponding tab or presents a modal sheet on tap.
-struct ActionCard: View {
-    let title: String
-    let subtitle: String
-    let icon: String
-    let color: Color
-    let action: () -> Void
+// MARK: - Action Card
 
+struct ActionCard: View {
+    let title: String; let subtitle: String; let icon: String; let color: Color; let action: () -> Void
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 16) {
+            HStack(alignment: .center, spacing: 16) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(color.opacity(0.2))
-                        .frame(width: 50, height: 50)
-                    Image(systemName: icon)
-                        .foregroundColor(color)
-                        .font(.system(size: 22))
+                    RoundedRectangle(cornerRadius: 12).fill(color.opacity(0.2)).frame(width: 50, height: 50)
+                    Image(systemName: icon).foregroundColor(color).font(.system(size: 22))
                 }
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Text(subtitle)
                         .font(.system(size: 12))
                         .foregroundColor(.white.opacity(0.6))
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundColor(.white.opacity(0.4))
-                    .font(.system(size: 14))
+                Image(systemName: "chevron.right").foregroundColor(.white.opacity(0.35)).font(.system(size: 12, weight: .medium))
             }
             .padding(16)
-            .background(Color.white.opacity(0.08))
-            .cornerRadius(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white.opacity(0.08)).cornerRadius(16)
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.12), lineWidth: 1))
         }
+        .buttonStyle(.plain)
     }
 }
 
-/// A single row in the Employees tab for one registered user.
-/// The avatar is a coloured circle whose tint reflects the member's role.
+// MARK: - Employee Row
+
 struct EmployeeRow: View {
     let member: DeskHiveUser
-
-    /// Returns the tint colour that corresponds to the member's role.
     var roleColor: Color {
         switch member.role {
-        case .employee:    return Color(hex: "#4ECDC4")  // Teal for standard employees
-        case .projectLead: return Color(hex: "#F5A623")  // Amber for project leads
-        case .admin:       return Color(hex: "#E94560")  // Red for admins
+        case .employee: return Color(hex: "#4ECDC4")
+        case .projectLead: return Color(hex: "#F5A623")
+        case .admin: return Color(hex: "#E94560")
         }
     }
-
     var body: some View {
         HStack(spacing: 14) {
-            // Avatar
             ZStack {
-                Circle()
-                    .fill(roleColor.opacity(0.2))
-                    .frame(width: 46, height: 46)
-                Text(member.email.prefix(1).uppercased())
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(roleColor)
+                Circle().fill(roleColor.opacity(0.2)).frame(width: 46, height: 46)
+                Text(member.email.prefix(1).uppercased()).font(.system(size: 18, weight: .bold)).foregroundColor(roleColor)
             }
-
-            // Info
             VStack(alignment: .leading, spacing: 4) {
-                Text(member.email)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
+                Text(member.email).font(.system(size: 14, weight: .semibold)).foregroundColor(.white).lineLimit(1)
                 RoleBadge(role: member.role)
             }
-
             Spacer()
-
-            // Joined date
             VStack(alignment: .trailing, spacing: 2) {
-                Text("Joined")
-                    .font(.system(size: 10))
-                    .foregroundColor(.white.opacity(0.3))
-                Text(shortDate(member.createdAt))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.5))
+                Text("Joined").font(.system(size: 10)).foregroundColor(.white.opacity(0.3))
+                Text(shortDate(member.createdAt)).font(.system(size: 11, weight: .medium)).foregroundColor(.white.opacity(0.5))
             }
         }
-        .padding(14)
-        .background(Color.white.opacity(0.07))
-        .cornerRadius(14)
+        .padding(14).background(Color.white.opacity(0.07)).cornerRadius(14)
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.1), lineWidth: 1))
     }
-
     private func shortDate(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "MMM d, yyyy"
-        return f.string(from: date)
+        let f = DateFormatter(); f.dateFormat = "MMM d, yyyy"; return f.string(from: date)
     }
 }
 
-/// Small pill badge that labels a user's role (Admin / Project Lead / Employee)
-/// with a matching background tint for quick visual scanning.
+// MARK: - Role Badge
+
 struct RoleBadge: View {
     let role: UserRole
-
-    var body: some View {
-        Text(role.displayName)
-            .font(.system(size: 10, weight: .bold))
-            .foregroundColor(badgeColor)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(badgeColor.opacity(0.15))
-            .cornerRadius(6)
-    }
-
     var badgeColor: Color {
         switch role {
-        case .admin:       return Color(hex: "#E94560")
+        case .admin: return Color(hex: "#E94560")
         case .projectLead: return Color(hex: "#F5A623")
-        case .employee:    return Color(hex: "#4ECDC4")
+        case .employee: return Color(hex: "#4ECDC4")
         }
+    }
+    var body: some View {
+        Text(role.displayName).font(.system(size: 10, weight: .bold)).foregroundColor(badgeColor)
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(badgeColor.opacity(0.15)).cornerRadius(6)
     }
 }
 
-/// Generic empty-state placeholder shown when a list has no data to display.
-/// Accepts a SF Symbol name, a heading, and a short instructional subtitle.
-struct EmptyStateView: View {
-    let icon: String
-    let title: String
-    let subtitle: String
+// MARK: - Empty State
 
+struct EmptyStateView: View {
+    let icon: String; let title: String; let subtitle: String
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 48))
-                .foregroundColor(.white.opacity(0.3))
-            Text(title)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white.opacity(0.6))
-            Text(subtitle)
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.4))
-                .multilineTextAlignment(.center)
+            Image(systemName: icon).font(.system(size: 48)).foregroundColor(.white.opacity(0.3))
+            Text(title).font(.system(size: 18, weight: .semibold)).foregroundColor(.white.opacity(0.6))
+            Text(subtitle).font(.system(size: 14)).foregroundColor(.white.opacity(0.4)).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
     }
 }
 
 #Preview {
-    AdminDashboardView()
-        .environmentObject(AppState())
+    AdminDashboardView().environmentObject(AppState())
 }

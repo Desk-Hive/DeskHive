@@ -16,28 +16,17 @@ enum EmbeddingError: Error {
 
 struct EmbeddingService {
 
-    // ⚠️  Key is loaded from Secrets.xcconfig (gitignored).
+    // ⚠️  Key is loaded from Secrets.xcconfig (gitignored) via Secrets.openAIKey.
     static let openAIKey: String = {
-        // Try Info.plist first (works when xcconfig is fully wired)
-        if let key = Bundle.main.object(forInfoDictionaryKey: "OPENAI_API_KEY") as? String,
-           !key.isEmpty, key != "your-openai-api-key-here" {
-            return key
+        let key = Secrets.openAIKey
+        if key.isEmpty {
+            print("❌ EmbeddingService: OpenAI API key is EMPTY")
+        } else if key.hasPrefix("sk-") {
+            print("✅ EmbeddingService: OpenAI API key loaded (starts with 'sk-')")
+        } else {
+            print("⚠️ EmbeddingService: OpenAI API key loaded but doesn't look valid: \(key.prefix(20))...")
         }
-        // Fallback: parse Secrets.xcconfig directly from the project source tree.
-        // Works in Simulator where the source is accessible on disk.
-        let xcconfig = "/Users/nishattasinshreya/Desktop/Shormi/DeskHive/DeskHive/Secrets.xcconfig"
-        if let content = try? String(contentsOfFile: xcconfig, encoding: .utf8) {
-            for line in content.components(separatedBy: .newlines) {
-                let t = line.trimmingCharacters(in: .whitespaces)
-                guard !t.hasPrefix("//"), t.hasPrefix("OPENAI_API_KEY") else { continue }
-                let parts = t.components(separatedBy: "=")
-                if parts.count >= 2 {
-                    let key = parts[1...].joined(separator: "=").trimmingCharacters(in: .whitespaces)
-                    if !key.isEmpty { return key }
-                }
-            }
-        }
-        return ""
+        return key
     }()
     private static let apiKey = openAIKey
     private static let model  = "text-embedding-3-small"

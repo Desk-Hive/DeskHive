@@ -22,7 +22,7 @@ struct AdminCommunitiesView: View {
 
             // Header
             HStack {
-                Text("Microcommunities")
+                Text("Micro Communities")
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                 Spacer()
@@ -57,8 +57,8 @@ struct AdminCommunitiesView: View {
             } else if communityVM.communities.isEmpty {
                 EmptyStateView(
                     icon: "person.3.sequence.fill",
-                    title: "No Communities Yet",
-                    subtitle: "Tap 'New' to create your first microcommunity."
+                    title: "No Micro Communities Yet",
+                    subtitle: "Tap 'New' to create your first micro community."
                 )
                 .padding(.top, 40)
             } else {
@@ -186,10 +186,10 @@ struct CreateCommunitySheet: View {
                                 .font(.system(size: 26))
                                 .foregroundColor(Color(hex: "#4ECDC4"))
                         }
-                        Text("New Microcommunity")
+                        Text("New Micro Community")
                             .font(.system(size: 22, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
-                        Text("Group employees into a project community")
+                        Text("Group employees into a project micro community")
                             .font(.system(size: 13))
                             .foregroundColor(.white.opacity(0.5))
                     }
@@ -197,11 +197,11 @@ struct CreateCommunitySheet: View {
                     // Details card
                     DeskHiveCard {
                         VStack(spacing: 16) {
-                            fieldBlock(label: "Community Name *", placeholder: "e.g. Alpha Team", text: $name)
+                            fieldBlock(label: "Micro Community Name *", placeholder: "e.g. Alpha Team", text: $name)
                             Divider().background(Color.white.opacity(0.1))
                             fieldBlock(label: "Project", placeholder: "e.g. Project Apollo", text: $project)
                             Divider().background(Color.white.opacity(0.1))
-                            fieldBlock(label: "Description", placeholder: "What does this community do?", text: $description, multiline: true)
+                            fieldBlock(label: "Description", placeholder: "What does this micro community do?", text: $description, multiline: true)
                         }
                     }
 
@@ -295,7 +295,7 @@ struct CreateCommunitySheet: View {
                             } else {
                                 HStack(spacing: 8) {
                                     Image(systemName: "person.3.sequence.fill")
-                                    Text("Create Community")
+                                    Text("Create Micro Community")
                                         .font(.system(size: 16, weight: .semibold))
                                 }
                                 .foregroundColor(.white)
@@ -440,7 +440,7 @@ struct CommunityDetailSheet: View {
                                     .font(.system(size: 20))
                             }
                             VStack(alignment: .leading, spacing: 3) {
-                                Text("Community Feed")
+                                Text("Micro Community Feed")
                                     .font(.system(size: 15, weight: .semibold))
                                     .foregroundColor(.white)
                                 Text("Post messages and view responses")
@@ -633,7 +633,7 @@ struct AddMemberToCommunitySheet: View {
                     Spacer().frame(height: 20)
 
                     VStack(spacing: 6) {
-                        Text("Add to \(community.name)")
+                        Text("Add to Micro Community: \(community.name)")
                             .font(.system(size: 20, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                         Text("Select an employee to add")
@@ -644,7 +644,7 @@ struct AddMemberToCommunitySheet: View {
                     DeskHiveCard {
                         VStack(spacing: 0) {
                             if available.isEmpty {
-                                Text("All employees are already in this community.")
+                                Text("All employees are already in this micro community.")
                                     .font(.system(size: 13))
                                     .foregroundColor(.white.opacity(0.4))
                                     .padding(.vertical, 12)

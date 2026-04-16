@@ -11,15 +11,14 @@ import FirebaseFirestore
 struct ProjectLeadAnnouncementsView: View {
     let community: Microcommunity?
     let leadEmail: String
+    var onBack: (() -> Void)? = nil
 
     @StateObject private var annVM   = AnnouncementViewModel()
-    @StateObject private var issueVM = IssueReportViewModel()
 
     @State private var selectedSegment: Int = 0
     @State private var showPostSheet   = false
-    @State private var caseIDInput     = ""
-    @State private var showIssueReport = false
     @EnvironmentObject var appState: AppState
+    @Environment(\.dismiss) private var dismiss
 
     private var totalUnread: Int {
         annVM.announcements.count + annVM.personalAnnouncements.count + annVM.taskNotifications.count
@@ -30,6 +29,21 @@ struct ProjectLeadAnnouncementsView: View {
 
             // ── Top bar ──────────────────────────────────────────────────
             HStack {
+                Button(action: {
+                    if let onBack {
+                        onBack()
+                    } else {
+                        dismiss()
+                    }
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.9))
+                        .frame(width: 34, height: 34)
+                        .background(Color.white.opacity(0.1))
+                        .clipShape(Circle())
+                }
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Inbox")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
@@ -63,8 +77,7 @@ struct ProjectLeadAnnouncementsView: View {
             // ── Segment control ──────────────────────────────────────────
             HStack(spacing: 6) {
                 segmentBtn(title: "Announcements", icon: "megaphone.fill",        idx: 0, badge: annVM.announcements.count + annVM.personalAnnouncements.count)
-                segmentBtn(title: "Work",          icon: "checklist",              idx: 1, badge: annVM.taskNotifications.count)
-                segmentBtn(title: "My Issues",     icon: "shield.lefthalf.filled", idx: 2, badge: 0)
+                segmentBtn(title: "Work",          icon: "checklist",       idx: 1, badge: annVM.taskNotifications.count)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 14)
@@ -74,8 +87,7 @@ struct ProjectLeadAnnouncementsView: View {
                 VStack(spacing: 16) {
                     switch selectedSegment {
                     case 0: announcementsSection
-                    case 1: workSection
-                    default: myIssuesSection
+                    default: workSection
                     }
                 }
                 .padding(.horizontal, 20)
@@ -95,9 +107,6 @@ struct ProjectLeadAnnouncementsView: View {
                 leadEmail:  leadEmail,
                 annVM:      annVM
             )
-        }
-        .sheet(isPresented: $showIssueReport) {
-            IssueReportView(viewModel: issueVM).environmentObject(appState)
         }
     }
 
@@ -186,125 +195,6 @@ struct ProjectLeadAnnouncementsView: View {
             } else {
                 ForEach(annVM.taskNotifications) { ann in
                     TaskNotificationCard(announcement: ann)
-                }
-            }
-        }
-    }
-
-    // ================================================================
-    // MARK: - SEGMENT 2: My Issues
-    // ================================================================
-    private var myIssuesSection: some View {
-        VStack(spacing: 16) {
-            DeskHiveCard {
-                VStack(alignment: .leading, spacing: 12) {
-                    Label("Check Issue Status", systemImage: "magnifyingglass.circle.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.6))
-
-                    HStack(spacing: 10) {
-                        Image(systemName: "number").foregroundColor(.white.opacity(0.4))
-                        TextField("", text: $caseIDInput,
-                                  prompt: Text("Enter Case ID  e.g. ISS-A3F9B2")
-                                    .foregroundColor(.white.opacity(0.3)))
-                            .foregroundColor(.white)
-                            .tint(Color(hex: "#A78BFA"))
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.characters)
-                        if !caseIDInput.isEmpty {
-                            Button(action: { caseIDInput = "" }) {
-                                Image(systemName: "xmark.circle.fill").foregroundColor(.white.opacity(0.3))
-                            }
-                        }
-                    }
-                    .padding(12)
-                    .background(Color.white.opacity(0.06)).cornerRadius(10)
-                    .overlay(RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color(hex: "#A78BFA").opacity(0.3), lineWidth: 1))
-
-                    Button(action: { Task { await issueVM.lookupIssue(caseID: caseIDInput) } }) {
-                        HStack(spacing: 6) {
-                            if issueVM.isLooking {
-                                ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .white)).scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "magnifyingglass")
-                                Text("Look Up").font(.system(size: 14, weight: .semibold))
-                            }
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity).frame(height: 42)
-                        .background(LinearGradient(
-                            gradient: Gradient(colors: [Color(hex: "#A78BFA"), Color(hex: "#7C3AED")]),
-                            startPoint: .leading, endPoint: .trailing))
-                        .cornerRadius(10)
-                    }
-                    .disabled(caseIDInput.trimmingCharacters(in: .whitespaces).isEmpty || issueVM.isLooking)
-                    .opacity(caseIDInput.trimmingCharacters(in: .whitespaces).isEmpty ? 0.5 : 1)
-                }
-            }
-
-            if let err = issueVM.lookupError { ErrorBanner(message: err) }
-            if let issue = issueVM.lookedUpIssue {
-                issueDetailCard(issue).transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-
-            Divider().background(Color.white.opacity(0.08)).padding(.vertical, 4)
-
-            Button(action: { showIssueReport = true }) {
-                HStack(spacing: 10) {
-                    Image(systemName: "plus.circle.fill").foregroundColor(Color(hex: "#E94560")).font(.system(size: 18))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Submit a New Issue").font(.system(size: 14, weight: .semibold)).foregroundColor(.white)
-                        Text("100% anonymous · get a Case ID instantly").font(.system(size: 11)).foregroundColor(.white.opacity(0.45))
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right").foregroundColor(.white.opacity(0.3)).font(.system(size: 12))
-                }
-                .padding(14)
-                .background(Color(hex: "#E94560").opacity(0.07)).cornerRadius(14)
-                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#E94560").opacity(0.2), lineWidth: 1))
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    // MARK: - Issue detail card
-    private func issueDetailCard(_ issue: IssueReport) -> some View {
-        DeskHiveCard {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    Text(issue.id)
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.45))
-                    Spacer()
-                    HStack(spacing: 4) {
-                        Image(systemName: issue.status.icon).font(.system(size: 10))
-                        Text(issue.status.label).font(.system(size: 11, weight: .semibold))
-                    }
-                    .foregroundColor(Color(hex: issue.status.color))
-                    .padding(.horizontal, 9).padding(.vertical, 4)
-                    .background(Color(hex: issue.status.color).opacity(0.15)).cornerRadius(7)
-                }
-                Divider().background(Color.white.opacity(0.1))
-                Text(issue.title).font(.system(size: 15, weight: .semibold)).foregroundColor(.white)
-                Text(issue.description).font(.system(size: 13)).foregroundColor(.white.opacity(0.6))
-                if !issue.adminResponse.isEmpty {
-                    Divider().background(Color.white.opacity(0.1))
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "bubble.left.fill").font(.system(size: 12)).foregroundColor(Color(hex: "#4ECDC4"))
-                            Text("Response").font(.system(size: 12, weight: .semibold)).foregroundColor(Color(hex: "#4ECDC4"))
-                        }
-                        Text(issue.adminResponse)
-                            .font(.system(size: 13)).foregroundColor(.white.opacity(0.85))
-                            .padding(10).frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(hex: "#4ECDC4").opacity(0.08)).cornerRadius(10)
-                    }
-                } else {
-                    HStack(spacing: 6) {
-                        Image(systemName: "clock").font(.system(size: 11)).foregroundColor(.white.opacity(0.3))
-                        Text("Awaiting response…").font(.system(size: 12)).foregroundColor(.white.opacity(0.35))
-                    }
                 }
             }
         }
@@ -559,7 +449,7 @@ struct LeadPostAnnouncementSheet: View {
         } else {
             // Send to each community member individually (type: task-like but "announcement")
             guard let c = community else {
-                errorMsg = "No community found."
+                errorMsg = "No micro community found."
                 isSaving = false
                 return
             }

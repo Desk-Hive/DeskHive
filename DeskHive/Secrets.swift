@@ -36,11 +36,20 @@ enum Secrets {
     /// Searches for `named` xcconfig file starting from the app bundle's source
     /// directory (works in the simulator and on device for Debug builds).
     private static func readFromXcconfig(named fileName: String, key: String) -> String? {
-        // Walk up from the bundle path to find the xcconfig file
+        // Try 1: Inside the app bundle (if the file is copied as a resource)
+        let bundlePath = Bundle.main.bundlePath
+        let bundleXcconfig = "\(bundlePath)/\(fileName)"
+        if let content = try? String(contentsOfFile: bundleXcconfig, encoding: .utf8) {
+            if let value = parseXcconfig(content: content, key: key) {
+                return value
+            }
+        }
+        
+        // Try 2: Walk up from the bundle path to find the xcconfig file in the source tree
         let searchDirs: [String] = {
             var dirs: [String] = []
             // In simulator the bundle sits inside DerivedData; walk up looking for the xcconfig
-            var url = URL(fileURLWithPath: Bundle.main.bundlePath)
+            var url = URL(fileURLWithPath: bundlePath)
             for _ in 0..<12 {
                 url = url.deletingLastPathComponent()
                 dirs.append(url.path)
@@ -55,18 +64,26 @@ enum Secrets {
             ]
             for path in candidates {
                 if let content = try? String(contentsOfFile: path, encoding: .utf8) {
-                    for line in content.components(separatedBy: .newlines) {
-                        let trimmed = line.trimmingCharacters(in: .whitespaces)
-                        guard !trimmed.hasPrefix("//"), trimmed.contains("=") else { continue }
-                        let parts = trimmed.components(separatedBy: "=")
-                        guard parts.count >= 2 else { continue }
-                        let lineKey = parts[0].trimmingCharacters(in: .whitespaces)
-                        if lineKey == key {
-                            return parts[1...].joined(separator: "=")
-                                .trimmingCharacters(in: .whitespaces)
-                        }
+                    if let value = parseXcconfig(content: content, key: key) {
+                        return value
                     }
                 }
+            }
+        }
+        return nil
+    }
+    
+    /// Parse an xcconfig file content for a specific key
+    private static func parseXcconfig(content: String, key: String) -> String? {
+        for line in content.components(separatedBy: .newlines) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.hasPrefix("//"), trimmed.contains("=") else { continue }
+            let parts = trimmed.components(separatedBy: "=")
+            guard parts.count >= 2 else { continue }
+            let lineKey = parts[0].trimmingCharacters(in: .whitespaces)
+            if lineKey == key {
+                return parts[1...].joined(separator: "=")
+                    .trimmingCharacters(in: .whitespaces)
             }
         }
         return nil

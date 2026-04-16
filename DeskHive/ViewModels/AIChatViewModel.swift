@@ -88,6 +88,22 @@ class AIChatViewModel: ObservableObject {
         let queryVec: [Float]
         do {
             queryVec = try await EmbeddingService.embed(text: userText)
+        } catch let error as EmbeddingError {
+            switch error {
+            case .networkError(let underlying):
+                appendError("Network error: \(underlying.localizedDescription)")
+            case .badResponse(let code):
+                if code == 401 {
+                    appendError("Invalid OpenAI API key. Please contact your admin.")
+                } else {
+                    appendError("OpenAI API error (HTTP \(code))")
+                }
+            case .decodingError:
+                appendError("Could not parse OpenAI response")
+            case .emptyResult:
+                appendError("OpenAI returned no embedding")
+            }
+            return
         } catch {
             appendError("Could not embed your question: \(error.localizedDescription)")
             return
