@@ -1,3 +1,6 @@
+# ── Internal docs (not for public repo) ─────────────────────────────────
+AI_WORKFLOW.md
+
 # ── Secrets (never commit) ──────────────────────────────────────────────
 Secrets.xcconfig
 

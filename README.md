@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏢 DeskHive
+# DeskHive
 
 ### A Modern AI-Powered Workplace Management Platform for iOS
 
@@ -16,7 +16,7 @@
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Overview](#-overview)
 - [Key Features](#-key-features)
@@ -25,24 +25,24 @@
 - [Project Structure](#-project-structure)
 - [User Roles](#-user-roles)
 - [Feature Deep Dives](#-feature-deep-dives)
-  - [Authentication & Role-Based Navigation](#authentication--role-based-navigation)
-  - [Mood-Aware Check-In](#mood-aware-check-in)
-  - [AI Project Assistant (RAG)](#ai-project-assistant-rag)
-  - [Project Documents & Embeddings](#project-documents--embeddings)
-  - [Community Chat & Microcommunities](#community-chat--microcommunities)
-  - [Task Management](#task-management)
-  - [Anonymous Issue Reporting](#anonymous-issue-reporting)
-  - [Announcements System](#announcements-system)
-  - [Employee of the Month](#employee-of-the-month)
-  - [Tech News Feed](#tech-news-feed)
+ - [Authentication & Role-Based Navigation](#authentication--role-based-navigation)
+ - [Mood-Aware Check-In](#mood-aware-check-in)
+ - [AI Project Assistant (RAG)](#ai-project-assistant-rag)
+ - [Project Documents & Embeddings](#project-documents--embeddings)
+ - [Community Chat & Microcommunities](#community-chat--microcommunities)
+ - [Task Management](#task-management)
+ - [Anonymous Issue Reporting](#anonymous-issue-reporting)
+ - [Announcements System](#announcements-system)
+ - [Employee of the Month](#employee-of-the-month)
+ - [Tech News Feed](#tech-news-feed)
 - [Data Models & Firestore Schema](#-data-models--firestore-schema)
 - [Prerequisites](#-prerequisites)
 - [Getting Started](#-getting-started)
-  - [1. Clone the Repository](#1-clone-the-repository)
-  - [2. Firebase Setup](#2-firebase-setup)
-  - [3. Configure API Keys](#3-configure-api-keys)
-  - [4. Cloud Functions Deployment](#4-cloud-functions-deployment)
-  - [5. Xcode Setup](#5-xcode-setup)
+ - [1. Clone the Repository](#1-clone-the-repository)
+ - [2. Firebase Setup](#2-firebase-setup)
+ - [3. Configure API Keys](#3-configure-api-keys)
+ - [4. Cloud Functions Deployment](#4-cloud-functions-deployment)
+ - [5. Xcode Setup](#5-xcode-setup)
 - [Environment & Secrets Management](#-environment--secrets-management)
 - [Cloud Functions](#-cloud-functions)
 - [Security](#-security)
@@ -50,7 +50,7 @@
 
 ---
 
-## 🌟 Overview
+## Overview
 
 DeskHive is a **full-stack iOS workplace management application** built with SwiftUI and Firebase. It addresses the complexity of managing a modern hybrid workforce by providing role-specific dashboards for **Admins**, **Project Leads**, and **Employees** — all communicating in real time through Firestore.
 
@@ -60,26 +60,26 @@ The app also features a **mood-aware UI** — when an employee checks in and log
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 | Feature | Description |
 |---|---|
-| 🔐 **Role-Based Auth** | Three distinct roles (Admin, Project Lead, Employee) with Firebase Auth and Firestore-backed role verification |
-| 😊 **Mood-Aware Check-In** | Daily emotional check-in that dynamically themes the employee dashboard |
-| 🤖 **RAG AI Assistant** | GPT-4o-mini chat grounded on project documents via cosine-similarity retrieval |
-| 📄 **Document Embedding Pipeline** | `.docx` upload → text extraction → chunking → OpenAI batch embedding → Firestore storage |
-| 💬 **Community Chat** | Real-time project microcommunity messaging with Project Lead identification |
-| ✅ **Task Management** | Project Leads assign prioritised tasks; employees track and mark them complete |
-| 🔒 **Anonymous Issue Reporting** | Zero-identity issue submission with case ID lookup and lifecycle tracking |
-| 📢 **Announcements** | Broadcast and personal announcements with priority levels (Info / Warning / Urgent) |
-| 🏆 **Employee of the Month** | Admin-curated monthly spotlight with real-time sync across all dashboards |
-| 📰 **Tech News Feed** | Live technology news via NewsAPI with in-app Safari reader |
-| 👤 **Rich User Profiles** | Full profile management including department, job title, salary, bio, and avatar |
-| ☁️ **Cloud Functions** | Secure member creation with auto-generated credentials and welcome email dispatch |
+| **Role-Based Auth** | Three distinct roles (Admin, Project Lead, Employee) with Firebase Auth and Firestore-backed role verification |
+| **Mood-Aware Check-In** | Daily emotional check-in that dynamically themes the employee dashboard |
+| **RAG AI Assistant** | GPT-4o-mini chat grounded on project documents via cosine-similarity retrieval |
+| **Document Embedding Pipeline** | `.docx` upload → text extraction → chunking → OpenAI batch embedding → Firestore storage |
+| **Community Chat** | Real-time project microcommunity messaging with Project Lead identification |
+| **Task Management** | Project Leads assign prioritised tasks; employees track and mark them complete |
+| **Anonymous Issue Reporting** | Zero-identity issue submission with case ID lookup and lifecycle tracking |
+| **Announcements** | Broadcast and personal announcements with priority levels (Info / Warning / Urgent) |
+| **Employee of the Month** | Admin-curated monthly spotlight with real-time sync across all dashboards |
+| **Tech News Feed** | Live technology news via NewsAPI with in-app Safari reader |
+| **Rich User Profiles** | Full profile management including department, job title, salary, bio, and avatar |
+| **Cloud Functions** | Secure member creation with auto-generated credentials and welcome email dispatch |
 
 ---
 
-## 🏗 System Architecture
+## System Architecture
 
 <div align="center">
   <img src="Images/system_architecture_diagram.png" width="800" alt="System Architecture Diagram"/>
@@ -91,7 +91,7 @@ The app follows the **MVVM pattern** throughout. Views observe `@StateObject` an
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -110,7 +110,7 @@ The app follows the **MVVM pattern** throughout. Views observe `@StateObject` an
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 DeskHiveAlbi/
@@ -197,11 +197,11 @@ DeskHiveAlbi/
 
 ---
 
-## 👥 User Roles
+## User Roles
 
 DeskHive enforces three distinct roles, each with a dedicated dashboard and set of permissions:
 
-### 🛡 Admin
+### Admin
 The Admin is the super-user of the organisation. Admins can:
 - **Create members** — invoke a Cloud Function that generates a secure random password, creates a Firebase Auth account, and emails credentials to the new employee
 - **Manage communities** — create and configure project microcommunities, assign Project Leads
@@ -210,7 +210,7 @@ The Admin is the super-user of the organisation. Admins can:
 - **Award Employee of the Month** — select a winner and publish their spotlight to all dashboards
 - **View the tech news feed** and full profile management
 
-### 👑 Project Lead
+### Project Lead
 Elevated from an employee account by the Admin. Project Leads can:
 - **Own a community** — each lead is assigned to exactly one project microcommunity
 - **Upload project documents** — `.docx` files are parsed and embedded into Firestore for AI retrieval
@@ -220,7 +220,7 @@ Elevated from an employee account by the Admin. Project Leads can:
 - **Submit and track issues** — same anonymous reporting capability as employees
 - **View announcements** and manage profile
 
-### 👤 Employee
+### Employee
 Standard workspace member. Employees can:
 - **Daily mood check-in** — log how they're feeling; the dashboard theme adapts accordingly
 - **View their work** — see tasks assigned to them by the Project Lead
@@ -234,7 +234,7 @@ Standard workspace member. Employees can:
 
 ---
 
-## 🔍 Feature Deep Dives
+## Feature Deep Dives
 
 ### Authentication & Role-Based Navigation
 
@@ -266,11 +266,11 @@ Each workday, employees open the **Check In** sheet and select their current moo
 
 | Mood | Emoji | Dashboard Theme |
 |---|---|---|
-| Great | 😄 | Emerald green gradient |
-| Good | 🙂 | Ocean teal gradient |
-| Okay | 😐 | Warm amber gradient |
-| Low | 😔 | Muted blue gradient |
-| Stressed | 😤 | Deep purple gradient |
+| Great | | Emerald green gradient |
+| Good | | Ocean teal gradient |
+| Okay | | Warm amber gradient |
+| Low | | Muted blue gradient |
+| Stressed | | Deep purple gradient |
 
 The selected mood is stored in Firestore under `checkIns/{uid}_{date}`. On subsequent app opens the same day, `CheckInViewModel` detects the existing record and pre-loads the mood, applying the theme immediately. The check-in status pill in the top bar turns the accent colour when checked in.
 
@@ -341,7 +341,7 @@ Each project has a **Microcommunity** — a named group with a description, a pr
 
 Inside a community, members can:
 - Send real-time messages via `CommunityFeedView` (Firestore listener)
-- See the Project Lead identified with a 👑 crown badge and gold label
+- See the Project Lead identified with a crown badge and gold label
 - View the member count
 
 The AI assistant is also scoped per community — employees select their community in `AIProjectSelectionView` before entering the chat, ensuring the assistant only has access to that project's documents.
@@ -387,9 +387,9 @@ Employees can report workplace concerns across five categories:
 
 | Category | Use Case |
 |---|---|
-| 🏢 Workplace | Office environment, policies |
-| 🔧 Technical | IT, equipment, software |
-| 🛡 Harassment | Interpersonal conduct |
+| Workplace | Office environment, policies |
+| Technical | IT, equipment, software |
+| Harassment | Interpersonal conduct |
 | ⊕ Safety | Physical hazards |
 | ⋯ Other | Anything else |
 
@@ -416,9 +416,9 @@ The Admin can create two types of announcements:
 | **Personal** | Specific UID | Promotions, individual recognition |
 
 Each announcement has a **priority level**:
-- 📣 **Info** — teal accent, routine communication
-- ⚠️ **Warning** — amber accent, requires attention
-- 🔔 **Urgent** — red accent, immediate action needed
+- **Info** — teal accent, routine communication
+- **Warning** — amber accent, requires attention
+- **Urgent** — red accent, immediate action needed
 
 Project Leads can also send task-related announcements to assignees. Employees see their personalised inbox combining broadcasts and personal messages, sorted newest-first.
 
@@ -440,93 +440,13 @@ The `NewsViewModel` fetches the latest technology articles from **NewsAPI.org**,
 
 ---
 
-## 🗄 Data Models & Firestore Schema
+## Data Models & Firestore Schema
 
 ### Entity Relationship Diagram
 
-```
-┌──────────────────────────────────────────────────────────────────────────────────────┐
-│                              DESKHIVE — ENTITY RELATIONSHIP                          │
-└──────────────────────────────────────────────────────────────────────────────────────┘
-
- ┌─────────────────────┐          ┌───────────────────────────┐
- │       users         │          │        checkIns            │
- │─────────────────────│  1 ── *  │───────────────────────────│
- │ PK  id (UID)        │──────────│ PK  id  (uid_yyyy-MM-dd)  │
- │     email           │          │     uid                    │
- │     role            │          │     mood                   │
- │     fullName        │          │     note                   │
- │     phone           │          │     timestamp              │
- │     department      │          └───────────────────────────┘
- │     jobTitle        │
- │     profileImageURL │          ┌───────────────────────────┐
- │     salary          │  1 ── *  │       announcements        │
- │     bio             │──────────│───────────────────────────│
- │     createdAt       │ (targetUID or broadcast)              │
- └──────────┬──────────┘          │ PK  id                    │
-            │                     │     title                  │
-            │                     │     body                   │
-            │ (projectLeadID)     │     priority               │
-            │                     │     type                   │
-            │                     │     targetUID              │
-            │                     │     createdAt              │
-            │                     └───────────────────────────┘
-            │
-            │ 1
-            ▼ *                   ┌───────────────────────────┐
- ┌──────────────────────┐  1 ── * │         issues             │
- │     communities      │         │───────────────────────────│
- │──────────────────────│         │ PK  id                    │
- │ PK  id               │         │     caseID  (ISS-XXXXXX)  │
- │     name             │         │     category               │
- │     description      │         │     title                  │
- │     project          │         │     description            │
- │     memberIDs[]      │         │     status                 │
- │     memberEmails[]   │         │     adminNote              │
- │     projectLeadID    │         │     createdAt              │
- │     projectLeadEmail │         │  ⚠ NO user identity stored │
- │     createdAt        │         └───────────────────────────┘
- └──────┬───┬───┬───────┘
-        │   │   │
-        │   │   └─────────────────────────────────────┐
-        │   │                                          │
-        │ 1 * messages                               1 * tasks
-        │   │                                          │
-        │   ▼                                          ▼
-        │ ┌────────────────────────┐  ┌──────────────────────────┐
-        │ │       messages         │  │         tasks            │
-        │ │────────────────────────│  │──────────────────────────│
-        │ │ PK  id                 │  │ PK  id                   │
-        │ │     senderID           │  │     title                │
-        │ │     senderEmail        │  │     description          │
-        │ │     text               │  │     priority             │
-        │ │     createdAt          │  │     status               │
-        │ └────────────────────────┘  │     assignedToID         │
-        │                             │     assignedToEmail      │
-        │ 1 * projectDocs             │     dueDate              │
-        │   │                         │     completedAt          │
-        │   ▼                         │     createdAt            │
-        │ ┌────────────────────────┐  └──────────────────────────┘
-        │ │      projectDocs       │
-        │ │────────────────────────│
-        │ │ PK  id                 │     ┌────────────────────────────┐
-        │ │     fileName           │     │      employeeOfMonth        │
-        │ │     uploadedBy         │     │────────────────────────────│
-        │ │     uploadedAt         │     │ PK  id  (yyyy-MM)          │
-        │ │     status             │     │     employeeID             │
-        │ │     base64Data         │     │     employeeEmail          │
-        │ └──────────┬─────────────┘     │     employeeName           │
-        │            │ 1 * chunks        │     reason                 │
-        │            ▼                   │     awardedBy              │
-        │ ┌────────────────────────┐     │     awardedAt              │
-        │ │        chunks          │     │     month                  │
-        │ │────────────────────────│     └────────────────────────────┘
-        │ │ PK  id                 │
-        │ │     text               │
-        │ │     embedding [1536]   │
-        │ │     chunkIndex         │
-        └─┘────────────────────────┘
-```
+<div align="center">
+  <img src="Images/erd1.jpeg" width="780" alt="DeskHive ER Diagram"/>
+</div>
 
 ### Top-Level Collections
 
@@ -588,7 +508,7 @@ Firestore
 
 ---
 
-## 📦 Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have the following installed and configured:
 
@@ -604,7 +524,7 @@ Before you begin, ensure you have the following installed and configured:
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Clone the Repository
 
@@ -622,7 +542,7 @@ cd DeskHive
 5. In **Project Settings → Your apps**, add an **iOS app** with bundle ID `com.yourorg.DeskHive`.
 6. Download `GoogleService-Info.plist` and place it at `DeskHive/GoogleService-Info.plist`.
 
-> ⚠️ `GoogleService-Info.plist` is gitignored. Never commit it to version control.
+> **Note:** `GoogleService-Info.plist` is gitignored. Never commit it to version control.
 
 Deploy Firestore security rules:
 
@@ -646,7 +566,7 @@ Edit `Secrets.xcconfig`:
 OPENAI_API_KEY = sk-your-openai-key-here
 ```
 
-> ⚠️ `Secrets.xcconfig` is gitignored. The `Secrets.swift` file reads this value at build time via the Info.plist / xcconfig bridge. Never hardcode API keys in Swift source files.
+> **Note:** `Secrets.xcconfig` is gitignored. The `Secrets.swift` file reads this value at build time via the Info.plist / xcconfig bridge. Never hardcode API keys in Swift source files.
 
 For the **NewsAPI key**, it is currently set directly in `NewsViewModel.swift`. For production, move it to the same xcconfig mechanism.
 
@@ -681,18 +601,18 @@ The `createMember` callable function will now be available to the iOS app.
 
 1. Open `DeskHive.xcodeproj` in Xcode.
 2. Add Firebase iOS SDK via **Swift Package Manager**:
-   - **File → Add Package Dependencies**
-   - URL: `https://github.com/firebase/firebase-ios-sdk`
-   - Add targets: `FirebaseAuth`, `FirebaseFirestore`, `FirebaseFunctions`
+ - **File → Add Package Dependencies**
+ - URL: `https://github.com/firebase/firebase-ios-sdk`
+ - Add targets: `FirebaseAuth`, `FirebaseFirestore`, `FirebaseFunctions`
 3. Ensure `Secrets.xcconfig` is referenced in the project's build configuration:
-   - Select the project in navigator → **Info** tab → **Configurations**
-   - Set both Debug and Release to use `Secrets.xcconfig`
+ - Select the project in navigator → **Info** tab → **Configurations**
+ - Set both Debug and Release to use `Secrets.xcconfig`
 4. Select your development team in **Signing & Capabilities**.
 5. Build and run on a simulator or device (iOS 17.0+).
 
 ---
 
-## 🔑 Environment & Secrets Management
+## Environment & Secrets Management
 
 | Secret | Location | How It's Used |
 |---|---|---|
@@ -709,7 +629,7 @@ The `.gitignore` at root excludes:
 
 ---
 
-## ☁️ Cloud Functions
+## Cloud Functions
 
 ### `createMember` (HTTPS Callable)
 
@@ -739,7 +659,7 @@ The `.gitignore` at root excludes:
 
 ---
 
-## 🔐 Security
+## Security
 
 DeskHive implements defence-in-depth at multiple layers:
 
@@ -764,7 +684,7 @@ DeskHive implements defence-in-depth at multiple layers:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 1. **Fork** the repository and create a feature branch: `git checkout -b feature/your-feature`
 2. Follow the existing **MVVM** pattern — new features belong in a ViewModel, not a View.
@@ -774,14 +694,7 @@ DeskHive implements defence-in-depth at multiple layers:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
----
-
-<div align="center">
-
-Built with ❤️ using SwiftUI, Firebase, and OpenAI
-
-</div>
