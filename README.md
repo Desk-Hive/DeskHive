@@ -20,7 +20,6 @@
 
 - [Overview](#-overview)
 - [Key Features](#-key-features)
-- [Screenshots](#-screenshots)
 - [System Architecture](#-system-architecture)
 - [Tech Stack](#-tech-stack)
 - [Project Structure](#-project-structure)
@@ -77,43 +76,6 @@ The app also features a **mood-aware UI** — when an employee checks in and log
 | 📰 **Tech News Feed** | Live technology news via NewsAPI with in-app Safari reader |
 | 👤 **Rich User Profiles** | Full profile management including department, job title, salary, bio, and avatar |
 | ☁️ **Cloud Functions** | Secure member creation with auto-generated credentials and welcome email dispatch |
-
----
-
-## 📸 Screenshots
-
-<table>
-  <tr>
-    <td align="center"><b>Employee Dashboard</b></td>
-    <td align="center"><b>AI Project Assistant</b></td>
-    <td align="center"><b>Community Chat</b></td>
-  </tr>
-  <tr>
-    <td><img src="Images/employee_dashboard.jpeg" width="220"/></td>
-    <td><img src="Images/AI_Assistant.jpeg" width="220"/></td>
-    <td><img src="Images/community_chat.jpeg" width="220"/></td>
-  </tr>
-  <tr>
-    <td align="center"><b>Project Documents</b></td>
-    <td align="center"><b>Task Assignment</b></td>
-    <td align="center"><b>Admin Announcements</b></td>
-  </tr>
-  <tr>
-    <td><img src="Images/project_documents_embedding.jpeg" width="220"/></td>
-    <td><img src="Images/project_lead_task_assign.jpeg" width="220"/></td>
-    <td><img src="Images/admin_announcement.jpeg" width="220"/></td>
-  </tr>
-  <tr>
-    <td align="center"><b>Anonymous Report</b></td>
-    <td align="center"><b>Track Issue</b></td>
-    <td align="center"></td>
-  </tr>
-  <tr>
-    <td><img src="Images/anonymous_report.jpeg" width="220"/></td>
-    <td><img src="Images/track_issue.jpeg" width="220"/></td>
-    <td></td>
-  </tr>
-</table>
 
 ---
 
@@ -469,11 +431,91 @@ The `NewsViewModel` fetches the latest technology articles from **NewsAPI.org**,
 
 ## 🗄 Data Models & Firestore Schema
 
-<div align="center">
-  <img src="Images/ER_Diagram.png" width="780" alt="Entity Relationship Diagram"/>
-  <br/>
-  <em>Firestore entity relationship diagram</em>
-</div>
+### Entity Relationship Diagram
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│                              DESKHIVE — ENTITY RELATIONSHIP                          │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+
+ ┌─────────────────────┐          ┌───────────────────────────┐
+ │       users         │          │        checkIns            │
+ │─────────────────────│  1 ── *  │───────────────────────────│
+ │ PK  id (UID)        │──────────│ PK  id  (uid_yyyy-MM-dd)  │
+ │     email           │          │     uid                    │
+ │     role            │          │     mood                   │
+ │     fullName        │          │     note                   │
+ │     phone           │          │     timestamp              │
+ │     department      │          └───────────────────────────┘
+ │     jobTitle        │
+ │     profileImageURL │          ┌───────────────────────────┐
+ │     salary          │  1 ── *  │       announcements        │
+ │     bio             │──────────│───────────────────────────│
+ │     createdAt       │ (targetUID or broadcast)              │
+ └──────────┬──────────┘          │ PK  id                    │
+            │                     │     title                  │
+            │                     │     body                   │
+            │ (projectLeadID)     │     priority               │
+            │                     │     type                   │
+            │                     │     targetUID              │
+            │                     │     createdAt              │
+            │                     └───────────────────────────┘
+            │
+            │ 1
+            ▼ *                   ┌───────────────────────────┐
+ ┌──────────────────────┐  1 ── * │         issues             │
+ │     communities      │         │───────────────────────────│
+ │──────────────────────│         │ PK  id                    │
+ │ PK  id               │         │     caseID  (ISS-XXXXXX)  │
+ │     name             │         │     category               │
+ │     description      │         │     title                  │
+ │     project          │         │     description            │
+ │     memberIDs[]      │         │     status                 │
+ │     memberEmails[]   │         │     adminNote              │
+ │     projectLeadID    │         │     createdAt              │
+ │     projectLeadEmail │         │  ⚠ NO user identity stored │
+ │     createdAt        │         └───────────────────────────┘
+ └──────┬───┬───┬───────┘
+        │   │   │
+        │   │   └─────────────────────────────────────┐
+        │   │                                          │
+        │ 1 * messages                               1 * tasks
+        │   │                                          │
+        │   ▼                                          ▼
+        │ ┌────────────────────────┐  ┌──────────────────────────┐
+        │ │       messages         │  │         tasks            │
+        │ │────────────────────────│  │──────────────────────────│
+        │ │ PK  id                 │  │ PK  id                   │
+        │ │     senderID           │  │     title                │
+        │ │     senderEmail        │  │     description          │
+        │ │     text               │  │     priority             │
+        │ │     createdAt          │  │     status               │
+        │ └────────────────────────┘  │     assignedToID         │
+        │                             │     assignedToEmail      │
+        │ 1 * projectDocs             │     dueDate              │
+        │   │                         │     completedAt          │
+        │   ▼                         │     createdAt            │
+        │ ┌────────────────────────┐  └──────────────────────────┘
+        │ │      projectDocs       │
+        │ │────────────────────────│
+        │ │ PK  id                 │     ┌────────────────────────────┐
+        │ │     fileName           │     │      employeeOfMonth        │
+        │ │     uploadedBy         │     │────────────────────────────│
+        │ │     uploadedAt         │     │ PK  id  (yyyy-MM)          │
+        │ │     status             │     │     employeeID             │
+        │ │     base64Data         │     │     employeeEmail          │
+        │ └──────────┬─────────────┘     │     employeeName           │
+        │            │ 1 * chunks        │     reason                 │
+        │            ▼                   │     awardedBy              │
+        │ ┌────────────────────────┐     │     awardedAt              │
+        │ │        chunks          │     │     month                  │
+        │ │────────────────────────│     └────────────────────────────┘
+        │ │ PK  id                 │
+        │ │     text               │
+        │ │     embedding [1536]   │
+        │ │     chunkIndex         │
+        └─┘────────────────────────┘
+```
 
 ### Top-Level Collections
 
