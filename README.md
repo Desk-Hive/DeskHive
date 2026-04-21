@@ -87,6 +87,14 @@ The app also features a **mood-aware UI** — when an employee checks in and log
   <em>DeskHive system architecture — iOS client, Firebase backend, OpenAI embeddings, and Cloud Functions</em>
 </div>
 
+### System Workflow
+
+<div align="center">
+  <img src="Images/sysworkflow.jpeg" width="800" alt="DeskHive System Workflow"/>
+  <br/>
+  <em>End-to-end system workflow — user launch, authentication, role-based routing, core features, and backend services</em>
+</div>
+
 The app follows the **MVVM pattern** throughout. Views observe `@StateObject` and `@EnvironmentObject` ViewModels, which in turn communicate with Firebase and external APIs. A single `AppState` object holds the authenticated user and current screen, enabling clean role-based routing from a central `RootView`.
 
 ---
