@@ -90,7 +90,7 @@ The app also features a **mood-aware UI** — when an employee checks in and log
 ### System Workflow
 
 <div align="center">
-  <img src="Images/sysworkflow.jpeg" width="800" alt="DeskHive System Workflow"/>
+  <img src="Images/sysworkflow.png" width="800" alt="DeskHive System Workflow"/>
   <br/>
   <em>End-to-end system workflow — user launch, authentication, role-based routing, core features, and backend services</em>
 </div>
