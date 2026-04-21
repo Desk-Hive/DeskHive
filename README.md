@@ -251,6 +251,17 @@ SplashView (2.8s) → LoginView → Firestore role lookup
 
 ### Mood-Aware Check-In
 
+<table>
+  <tr>
+    <td align="center"><b>Before Check-In</b><br/><em>Default dark theme</em></td>
+    <td align="center"><b>After Check-In — "Great" mood</b><br/><em>Emerald green theme applied</em></td>
+  </tr>
+  <tr>
+    <td><img src="Images/1.jpeg" width="260"/></td>
+    <td><img src="Images/2.jpeg" width="260"/></td>
+  </tr>
+</table>
+
 Each workday, employees open the **Check In** sheet and select their current mood from five states:
 
 | Mood | Emoji | Dashboard Theme |
